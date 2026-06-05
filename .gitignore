@@ -1,8 +1,28 @@
+﻿# Environment files
 .env
 .env.*
 !.env.example
 
+# Python
 venv/
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Local data / uploaded files
+data/
+storage/
+
+# Logs
+*.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

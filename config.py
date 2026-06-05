@@ -13,3 +13,8 @@ WELCOME_MESSAGE = "Chào bạn, mình là chatbot AI demo. Bạn muốn hỏi g�
 APP_HEIGHT = 500
 CHAT_FRAME_HEIGHT = 520
 HISTORY_BOX_HEIGHT = 360
+
+RAG_PERSIST_DIR = os.getenv("RAG_PERSIST_DIR", "storage/vector_db")
+RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "rag_documents")
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
+RAG_SIMILARITY_THRESHOLD = float(os.getenv("RAG_SIMILARITY_THRESHOLD", "0.35"))

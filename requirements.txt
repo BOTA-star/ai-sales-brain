@@ -4,3 +4,12 @@ ollama
 pandas
 numpy
 psycopg2-binary
+pypdf 
+python-docx
+chromadb
+sentence-transformers
+requests
+langchain 
+langchain-community 
+langchain-chroma 
+langchain-huggingface

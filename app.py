@@ -1,7 +1,6 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
-from bot_service import get_bot_answer
+from chat_orchestrator import get_chat_answer
 from config import CHAT_FRAME_HEIGHT, WELCOME_MESSAGE, HISTORY_BOX_HEIGHT
 from conversation_service import (
     create_conversation,
@@ -12,7 +11,14 @@ from conversation_service import (
     save_message,
     update_conversation_title_if_needed,
 )
+from rag_service import create_rag_pipeline
 from ui_components import build_chat_html, get_global_css
+
+
+@st.cache_resource
+def get_rag_pipeline():
+    return create_rag_pipeline()
+
 
 def shorten_title(title: str, max_length: int = 32) -> str:
     if not title:
@@ -95,10 +101,10 @@ with left_col:
                     st.rerun()
 
 with right_col:
-    components.html(
+    st.iframe(
         build_chat_html(st.session_state["messages"]),
         height=CHAT_FRAME_HEIGHT,
-        scrolling=False
+        width="stretch"
     )
 
     with st.form("chat_form", clear_on_submit=True):
@@ -114,9 +120,9 @@ with right_col:
         with button_col:
             submitted = st.form_submit_button("Gửi", use_container_width=True)
 
-    if submitted and user_input.strip():
-        user_input = user_input.strip()
+    clean_user_input = (user_input or "").strip()
 
+    if submitted and clean_user_input:
         conversation_id = st.session_state.get("conversation_id")
 
         if not conversation_id:
@@ -127,13 +133,19 @@ with right_col:
 
         st.session_state["messages"].append({
             "role": "user",
-            "content": user_input
+            "content": clean_user_input
         })
 
-        save_message(conversation_id, "user", user_input)
-        update_conversation_title_if_needed(conversation_id, user_input)
+        save_message(conversation_id, "user", clean_user_input)
+        update_conversation_title_if_needed(conversation_id, clean_user_input)
 
-        answer = get_bot_answer(user_input, conversation_id)
+        rag_pipeline = get_rag_pipeline()
+
+        answer = get_chat_answer(
+            user_input=clean_user_input,
+            conversation_id=conversation_id,
+            rag_pipeline=rag_pipeline
+        )
 
         st.session_state["messages"].append({
             "role": "assistant",
