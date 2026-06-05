@@ -10,5 +10,6 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 DEFAULT_CUSTOMER_NAME = "Khách demo AI Sales Brain"
 WELCOME_MESSAGE = "Chào bạn, mình là chatbot AI demo. Bạn muốn hỏi gì?"
 
-APP_HEIGHT = 550
-CHAT_FRAME_HEIGHT = 550
+APP_HEIGHT = 500
+CHAT_FRAME_HEIGHT = 520
+HISTORY_BOX_HEIGHT = 360

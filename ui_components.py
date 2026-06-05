@@ -7,93 +7,89 @@ def get_global_css() -> str:
     return """
 <style>
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-    padding-left: 2.5rem !important;
-    padding-right: 2.5rem !important;
+    padding-top: 4.2rem !important;
+    padding-bottom: 0.75rem !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
     max-width: 100% !important;
+    min-height: 100vh !important;
 }
 
 .stApp {
     background: linear-gradient(135deg, #EAF8FB 0%, #F7FCFD 100%);
+    min-height: 100vh;
 }
 
-/* Giảm scroll toàn trang */
 html, body {
-    overflow: hidden;
+    overflow: auto;
 }
 
-/* Cột lịch sử */
-.history-panel {
-    height: 610px;
-    background: rgba(255, 255, 255, 0.60);
-    border: 1px solid rgba(65, 157, 165, 0.25);
-    border-radius: 22px;
-    padding: 18px;
-    box-shadow: 0 10px 28px rgba(65, 157, 165, 0.08);
-    box-sizing: border-box;
+/* Không được hidden, nếu không sẽ mất ô nhập */
+section.main {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
 }
 
-.history-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #163B40;
-    margin-bottom: 16px;
+.main .block-container {
+    max-width: 100vw !important;
 }
 
-.history-item {
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    border-radius: 14px;
-    background: rgba(65, 157, 165, 0.13);
-    color: #24474B;
-    font-size: 14px;
+div[data-testid="stHorizontalBlock"] {
+    gap: 1.2rem !important;
 }
 
-/* Form nhập tin nhắn - layer trước */
-div[data-testid="stForm"] {
-    height: 86px;
-    background: rgba(255, 255, 255, 0.72);
-    border-left: 1px solid rgba(65, 157, 165, 0.25);
-    border-right: 1px solid rgba(65, 157, 165, 0.25);
-    border-bottom: 1px solid rgba(65, 157, 165, 0.25);
-    border-top: none;
-    border-radius: 0 0 22px 22px;
-    padding: 16px 18px 12px 18px;
-    box-shadow: 0 10px 28px rgba(65, 157, 165, 0.08);
-    box-sizing: border-box;
+div[data-testid="column"] {
+    min-width: 0 !important;
 }
 
-/* Ô nhập */
-div[data-testid="stTextInput"] input {
-    border-radius: 16px;
-    border: 1px solid rgba(65, 157, 165, 0.32);
-    background: rgba(255, 255, 255, 0.95);
-    height: 42px;
+/* Header cột trái */
+.left-title {
+    font-size: 24px;
+    font-weight: 800;
     color: #102D33;
+    line-height: 1.2;
+    margin-bottom: 4px;
 }
 
-/* Nút gửi */
-div[data-testid="stFormSubmitButton"] button {
-    border-radius: 16px;
+.left-subtitle {
+    font-size: 14px;
+    color: #6A8085;
+    margin-bottom: 12px;
+}
+
+.history-list-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #102D33;
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+/* Button chung */
+.stButton button {
+    width: 100%;
+    border-radius: 12px;
     background: rgba(65, 157, 165, 0.92);
     color: white;
     border: none;
-    height: 42px;
+
+    min-height: 52px;
+    max-height: 52px;
+
+    font-size: 14px;
     font-weight: 600;
-}
+    line-height: 1.2;
 
-div[data-testid="stFormSubmitButton"] button:hover {
-    background: rgba(48, 127, 135, 0.98);
-    color: white;
-    border: none;
-}
+    padding: 8px 16px;
+    margin-bottom: 10px;
 
-.stButton button {
-    border-radius: 14px;
-    background: rgba(65, 157, 165, 0.90);
-    color: white;
-    border: none;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    overflow: hidden !important;
+    box-sizing: border-box !important;
 }
 
 .stButton button:hover {
@@ -102,9 +98,111 @@ div[data-testid="stFormSubmitButton"] button:hover {
     border: none;
 }
 
-/* Giảm khoảng trắng iframe */
+/* Streamlit thường bọc text của button trong markdown container */
+.stButton button div[data-testid="stMarkdownContainer"] {
+    width: 100% !important;
+    display: block !important;
+    overflow: hidden !important;
+}
+
+/* Chữ trong button nằm bên trái */
+.stButton button div[data-testid="stMarkdownContainer"] p {
+    width: 100% !important;
+    margin: 0 !important;
+
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Fallback nếu Streamlit render thẳng thẻ p */
+.stButton button p {
+    width: 100% !important;
+    margin: 0 !important;
+
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Khung danh sách chat có scroll nội bộ */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    border: none !important;
+    background: transparent !important;
+    overflow-y: auto !important;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"]::-webkit-scrollbar {
+    width: 6px;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"]::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"]::-webkit-scrollbar-thumb {
+    background: rgba(65, 157, 165, 0.35);
+    border-radius: 20px;
+}
+
+/* Form nhập tin nhắn */
+div[data-testid="stForm"] {
+    min-height: 76px;
+    background: rgba(255, 255, 255, 0.78);
+    border-left: 1px solid rgba(65, 157, 165, 0.25);
+    border-right: 1px solid rgba(65, 157, 165, 0.25);
+    border-bottom: 1px solid rgba(65, 157, 165, 0.25);
+    border-top: none;
+    border-radius: 0 0 22px 22px;
+    padding: 12px 18px 10px 18px;
+    box-shadow: 0 10px 28px rgba(65, 157, 165, 0.08);
+    box-sizing: border-box;
+
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+}
+
+div[data-testid="stTextInput"] input {
+    border-radius: 16px;
+    border: 1px solid rgba(65, 157, 165, 0.32);
+    background: rgba(255, 255, 255, 0.95);
+    height: 40px;
+    color: #102D33;
+    padding-left: 14px;
+}
+
+/* Riêng nút gửi thì căn giữa */
+div[data-testid="stFormSubmitButton"] button {
+    border-radius: 16px;
+    background: rgba(65, 157, 165, 0.92);
+    color: white;
+    border: none;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    font-weight: 700;
+
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+div[data-testid="stFormSubmitButton"] button div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stFormSubmitButton"] button p {
+    text-align: center !important;
+}
+
+div[data-testid="stFormSubmitButton"] button:hover {
+    background: rgba(48, 127, 135, 0.98);
+    color: white;
+    border: none;
+}
+
 iframe {
     display: block;
+    border: none !important;
 }
 </style>
 """
@@ -157,10 +255,8 @@ def build_chat_html(messages) -> str:
     }}
 
     .chat-header {{
-        height: 86px;
-        padding: 18px 26px 12px 26px;
-        border-bottom: 1px solid rgba(65, 157, 165, 0.15);
-        background: rgba(255, 255, 255, 0.30);
+        height: 76px;
+        padding: 14px 24px 10px 24px;
         box-sizing: border-box;
     }}
 
@@ -169,18 +265,19 @@ def build_chat_html(messages) -> str:
         font-weight: 800;
         color: #102D33;
         margin-bottom: 4px;
+        line-height: 1.15;
     }}
 
     .chat-subtitle {{
         color: #4B6B70;
         font-size: 15px;
+        line-height: 1.3;
     }}
 
-    /* Layer sau: vùng chat có scroll */
     .chat-scroll {{
-        height: {CHAT_FRAME_HEIGHT - 86}px;
+        height: calc(100% - 76px);
         overflow-y: auto;
-        padding: 20px 26px;
+        padding: 16px 24px;
         box-sizing: border-box;
         scroll-behavior: smooth;
         background: rgba(240, 251, 253, 0.35);
@@ -231,7 +328,7 @@ def build_chat_html(messages) -> str:
     }}
 
     .assistant-bubble {{
-        background: rgba(255, 255, 255, 0.78);
+        background: rgba(255, 255, 255, 0.82);
         border: 1px solid rgba(65, 157, 165, 0.22);
         color: #183A40;
         border-bottom-left-radius: 6px;

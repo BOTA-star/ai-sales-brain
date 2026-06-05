@@ -7,7 +7,12 @@ def get_bot_answer(user_input: str, conversation_id: str) -> str:
         return f"Đây là câu trả lời demo. Bạn vừa hỏi: {user_input}"
 
     try:
-        import ollama
+        from ollama import Client
+
+        client = Client(
+            host="http://localhost:11434",
+            timeout=60
+        )
 
         system_prompt = {
             "role": "system",
@@ -23,12 +28,13 @@ def get_bot_answer(user_input: str, conversation_id: str) -> str:
         recent_context = get_recent_context(conversation_id, limit=8)
         messages = [system_prompt] + recent_context
 
-        response = ollama.chat(
+        response = client.chat(
             model=MODEL_NAME,
             messages=messages,
             options={
                 "temperature": 0.2,
-                "top_p": 0.8
+                "top_p": 0.8,
+                "num_predict": 300
             }
         )
 
@@ -41,7 +47,8 @@ def get_bot_answer(user_input: str, conversation_id: str) -> str:
         return (
             "Không gọi được Ollama. Bạn kiểm tra lại:\n\n"
             "1. Ollama đã chạy chưa.\n"
-            "2. Đã pull model chưa.\n"
-            "3. Tên model trong file .env có đúng không.\n\n"
+            "2. Đã pull đúng model chưa.\n"
+            "3. Tên model trong file .env có đúng không.\n"
+            "4. Ollama có đang chạy ở localhost:11434 không.\n\n"
             f"Chi tiết lỗi: {e}"
         )

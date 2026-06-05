@@ -2,14 +2,28 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from bot_service import get_bot_answer
-from config import CHAT_FRAME_HEIGHT, WELCOME_MESSAGE
+from config import CHAT_FRAME_HEIGHT, WELCOME_MESSAGE, HISTORY_BOX_HEIGHT
 from conversation_service import (
     create_conversation,
     create_customer_if_needed,
     init_chat_session,
+    load_conversations,
+    load_messages,
     save_message,
+    update_conversation_title_if_needed,
 )
 from ui_components import build_chat_html, get_global_css
+
+def shorten_title(title: str, max_length: int = 32) -> str:
+    if not title:
+        return "Cuộc trò chuyện mới"
+
+    title = title.strip()
+
+    if len(title) <= max_length:
+        return title
+
+    return title[:max_length] + "..."
 
 
 st.set_page_config(
@@ -21,31 +35,25 @@ st.set_page_config(
 
 st.markdown(get_global_css(), unsafe_allow_html=True)
 
-
 if "messages" not in st.session_state:
     init_chat_session(st.session_state)
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = ["Cuộc trò chuyện hiện tại"]
-
-
 left_col, right_col = st.columns([1, 4], gap="large")
 
-
 with left_col:
-    st.markdown("""
-    <div class="history-panel">
-        <div class="history-title">Lịch sử</div>
-        <div class="history-item">Cuộc trò chuyện hiện tại</div>
-    </div>
-    """, unsafe_allow_html=True)
+    customer_id = create_customer_if_needed(st.session_state)
+    conversations = load_conversations(customer_id)
 
-    if st.button("➕ Chat mới", use_container_width=True):
-        customer_id = create_customer_if_needed(st.session_state)
-        conversation_id = create_conversation(customer_id)
+    st.markdown(
+        f"""
+        <div class="left-title">Lịch sử</div>
+        <div class="left-subtitle">{len(conversations)} phiên chat</div>
+        """,
+        unsafe_allow_html=True
+    )
 
-        st.session_state["conversation_id"] = conversation_id
-
+    if st.button("➕ Chat mới", use_container_width=True, key="new_chat_button"):
+        st.session_state["conversation_id"] = None
         st.session_state["messages"] = [
             {
                 "role": "assistant",
@@ -53,10 +61,38 @@ with left_col:
             }
         ]
 
-        save_message(conversation_id, "assistant", WELCOME_MESSAGE)
-
         st.rerun()
 
+    st.markdown(
+        """
+        <div class="history-list-title">Danh sách chat</div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    history_box = st.container(height=HISTORY_BOX_HEIGHT, border=True)
+
+    with history_box:
+        if not conversations:
+            st.caption("Chưa có cuộc trò chuyện nào.")
+        else:
+            for index, conversation in enumerate(conversations):
+                conversation_id = str(conversation["id"])
+                title = conversation["title"] or f"Cuộc trò chuyện {index + 1}"
+                display_title = shorten_title(title)
+
+                is_current = conversation_id == st.session_state.get("conversation_id")
+                button_label = f"● {display_title}" if is_current else display_title
+
+                if st.button(
+                    button_label,
+                    key=f"conversation_{conversation_id}",
+                    use_container_width=True
+                ):
+                    st.session_state["conversation_id"] = conversation_id
+                    st.session_state["messages"] = load_messages(conversation_id)
+
+                    st.rerun()
 
 with right_col:
     components.html(
@@ -81,7 +117,13 @@ with right_col:
     if submitted and user_input.strip():
         user_input = user_input.strip()
 
-        conversation_id = st.session_state["conversation_id"]
+        conversation_id = st.session_state.get("conversation_id")
+
+        if not conversation_id:
+            conversation_id = create_conversation(customer_id)
+            st.session_state["conversation_id"] = conversation_id
+
+            save_message(conversation_id, "assistant", WELCOME_MESSAGE)
 
         st.session_state["messages"].append({
             "role": "user",
@@ -89,6 +131,7 @@ with right_col:
         })
 
         save_message(conversation_id, "user", user_input)
+        update_conversation_title_if_needed(conversation_id, user_input)
 
         answer = get_bot_answer(user_input, conversation_id)
 
