@@ -4,7 +4,6 @@ from typing import List
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
-
 @dataclass
 class RetrievedContext:
     content: str
@@ -13,7 +12,7 @@ class RetrievedContext:
     page: int
     chunk_index: int
     source: str
-
+    relevance_score: float | None=None
 
 class RetrievalOrchestrator:
     def __init__(
@@ -22,8 +21,12 @@ class RetrievalOrchestrator:
         collection_name: str = "rag_documents",
         embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         top_k: int = 4,
+        similarity_threshold: float = 0.45,
     ):
         self.top_k = top_k
+        self.similarity_threshold = (
+            similarity_threshold
+        )
 
         self.embedding_function = HuggingFaceEmbeddings(
             model_name=embedding_model,
@@ -41,29 +44,89 @@ class RetrievalOrchestrator:
             search_kwargs={"k": self.top_k}
         )
 
-    def retrieve(self, query: str) -> List[RetrievedContext]:
-        if not query or not query.strip():
+    def retrieve(
+        self,
+        query: str,
+    ) -> list[RetrievedContext]:
+        clean_query = (
+            query or ""
+        ).strip()
+
+        if not clean_query:
             return []
 
-        docs = self.retriever.invoke(query.strip())
+        docs_with_scores = (
+            self.vector_store
+            .similarity_search_with_relevance_scores(
+                clean_query,
+                k=self.top_k,
+            )
+        )
 
-        results: List[RetrievedContext] = []
+        results: list[RetrievedContext] = []
 
-        for doc in docs:
-            metadata = doc.metadata or {}
+        for document, score in docs_with_scores:
+            relevance_score = float(score)
+
+            if (
+                relevance_score
+                < self.similarity_threshold
+            ):
+                continue
+
+            metadata = document.metadata or {}
 
             results.append(
                 RetrievedContext(
-                    content=doc.page_content,
-                    file_name=metadata.get("file_name", ""),
-                    file_type=metadata.get("file_type", ""),
-                    page=int(metadata.get("page", -1)),
-                    chunk_index=int(metadata.get("chunk_index", -1)),
-                    source=metadata.get("source", ""),
+                    content=document.page_content,
+                    file_name=str(
+                        metadata.get(
+                            "file_name",
+                            "",
+                        )
+                    ),
+                    file_type=str(
+                        metadata.get(
+                            "file_type",
+                            "",
+                        )
+                    ),
+                    page=self._safe_int(
+                        metadata.get("page"),
+                        -1,
+                    ),
+                    chunk_index=self._safe_int(
+                        metadata.get(
+                            "chunk_index"
+                        ),
+                        -1,
+                    ),
+                    source=str(
+                        metadata.get(
+                            "source",
+                            "",
+                        )
+                    ),
+                    relevance_score=(
+                        relevance_score
+                    ),
                 )
             )
 
         return results
+    
+    @staticmethod
+    def _safe_int(
+        value,
+        default: int,
+    ) -> int:
+        try:
+            return int(value)
+        except (
+            TypeError,
+            ValueError,
+        ):
+            return default
 
     def build_context(self, query: str) -> str:
         retrieved_items = self.retrieve(query)
