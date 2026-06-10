@@ -162,6 +162,9 @@ st.session_state.setdefault(
     None,
 )
 
+st.caption(
+    f"Debug customer_id: {customer_id}"
+)
 
 # ==================================================
 # Main layout

@@ -12,7 +12,6 @@ from requests.exceptions import RequestException
 
 logger = logging.getLogger(__name__)
 
-
 class MemoryService:
     """
     Module trung gian dùng để giao tiếp với AgentMemory REST API.
@@ -293,10 +292,8 @@ class MemoryService:
 
 _default_memory_service = MemoryService()
 
-
 def check_memory_health() -> bool:
     return _default_memory_service.health_check()
-
 
 def save_memory(
     customer_id: str | int,
@@ -311,7 +308,6 @@ def save_memory(
         concepts=concepts,
     )
 
-
 def search_memory(
     customer_id: str | int,
     query: str,
@@ -322,7 +318,6 @@ def search_memory(
         query=query,
         limit=limit,
     )
-
 
 def format_memory_context(
     memories: list[dict[str, Any]],
