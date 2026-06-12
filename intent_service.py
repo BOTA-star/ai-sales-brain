@@ -1,9 +1,6 @@
 import re
 
-# ==================================================
 # Math patterns
-# ==================================================
-
 MATH_ONLY_PATTERN = re.compile(
     r"^[0-9\s+\-*/().]+$"
 )
@@ -16,16 +13,12 @@ MATH_EXPRESSION_PATTERN = re.compile(
     r"[-+]?(?:\d+(?:\.\d+)?|\.\d+))+"
 )
 
-# ==================================================
 # Text normalization
-# ==================================================
-
 def normalize_text(
     value: str | None,
 ) -> str:
     """
     Chuẩn hóa text đầu vào.
-
     - Không lỗi khi value là None.
     - Xóa khoảng trắng đầu và cuối.
     - Gom nhiều khoảng trắng thành một khoảng trắng.
@@ -34,9 +27,7 @@ def normalize_text(
     if value is None:
         return ""
 
-    normalized = str(
-        value
-    ).strip()
+    normalized = str(value).strip()
 
     normalized = re.sub(
         r"\s+",
@@ -51,19 +42,13 @@ def normalize_for_intent(
 ) -> str:
     """
     Chuẩn hóa text phục vụ phân loại intent.
-
-    Chỉ chuyển x hoặc × thành phép nhân khi ký tự
-    nằm giữa hai chữ số.
-
+    Chỉ chuyển x hoặc × thành phép nhân khi ký tự nằm giữa hai chữ số.
     Ví dụ:
     - 123x321  -> 123 * 321
     - 10 × 2   -> 10 * 2
     - xin chào -> giữ nguyên
     """
-
-    text = normalize_text(
-        value
-    ).lower()
+    text = normalize_text(value).lower()
 
     text = (
         text.replace("÷", "/")
@@ -71,8 +56,7 @@ def normalize_for_intent(
         .replace("—", "-")
     )
 
-    # Chỉ xem x hoặc × là phép nhân
-    # khi nằm giữa hai chữ số.
+    # Chỉ xem x hoặc × là phép nhân khi nằm giữa hai chữ số.
     text = re.sub(
         r"(?<=\d)\s*[x×]\s*(?=\d)",
         " * ",
@@ -91,10 +75,8 @@ def strip_recall_prefix(
     text: str,
 ) -> str:
     """
-    Loại bỏ các từ dẫn đầu không ảnh hưởng
-    tới ý nghĩa của câu hỏi recall.
+    Loại bỏ các từ dẫn đầu không ảnh hưởng tới ý nghĩa của câu hỏi recall.
     """
-
     previous_text = ""
 
     while previous_text != text:
@@ -118,35 +100,26 @@ def contains_phrase(
     phrases: list[str],
 ) -> bool:
     """
-    Kiểm tra text có chứa ít nhất
-    một cụm từ trong danh sách.
+    Kiểm tra text có chứa ít nhất một cụm từ trong danh sách.
     """
-
     return any(
         phrase in text
         for phrase in phrases
     )
 
-# ==================================================
 # Simple math
-# ==================================================
-
 def extract_math_expression(
     text: str | None,
 ) -> str | None:
     """
     Tách biểu thức toán từ câu tự nhiên.
-
     Ví dụ:
     - "1+1 bằng mấy?"         -> "1+1"
     - "tính 123 * 321"        -> "123 * 321"
     - "123x321 là bao nhiêu"  -> "123 * 321"
     - "kết quả 10 / 2 là?"    -> "10 / 2"
     """
-
-    normalized = normalize_for_intent(
-        text
-    )
+    normalized = normalize_for_intent(text)
 
     if not normalized:
         return None
@@ -156,9 +129,7 @@ def extract_math_expression(
     ):
         return normalized.strip()
 
-    match = MATH_EXPRESSION_PATTERN.search(
-        normalized
-    )
+    match = MATH_EXPRESSION_PATTERN.search(normalized)
 
     if not match:
         return None
@@ -169,20 +140,14 @@ def is_simple_math_question(
     text: str | None,
 ) -> bool:
     """
-    Nhận diện phép tính đơn giản
-    trong câu tự nhiên.
+    Nhận diện phép tính đơn giản trong câu tự nhiên.
     """
-
-    expression = extract_math_expression(
-        text
-    )
+    expression = extract_math_expression(text)
 
     if not expression:
         return False
 
-    normalized = normalize_for_intent(
-        text
-    )
+    normalized = normalize_for_intent(text)
 
     if MATH_ONLY_PATTERN.fullmatch(
         normalized
@@ -208,17 +173,13 @@ def is_simple_math_question(
 
     return normalized.endswith("?")
 
-# ==================================================
 # Memory recall
-# ==================================================
-
 def is_memory_recall_question(
     text: str,
 ) -> bool:
     """
     Nhận diện câu hỏi yêu cầu nhớ lại thông tin
     người dùng đã cung cấp trước đó.
-
     Hỗ trợ:
     - Bạn nhớ gì về mình?
     - Mình tên gì?
@@ -226,14 +187,9 @@ def is_memory_recall_question(
     - Mình đang cần giải pháp gì?
     - Nhu cầu của mình?
     """
+    normalized = normalize_for_intent(text)
 
-    normalized = normalize_for_intent(
-        text
-    )
-
-    normalized = strip_recall_prefix(
-        normalized
-    )
+    normalized = strip_recall_prefix(normalized)
 
     if not normalized:
         return False
@@ -327,17 +283,13 @@ def is_memory_recall_question(
         for pattern in field_recall_patterns
     )
 
-# ==================================================
-# Customer information
-# ==================================================
-
+# Thông tin người dùng
 def is_customer_information(
     text: str,
 ) -> bool:
     """
     Nhận diện khách hàng đang cung cấp
     thông tin mới về:
-
     - Danh tính.
     - Nghề nghiệp hoặc lĩnh vực.
     - Doanh nghiệp.
@@ -345,16 +297,12 @@ def is_customer_information(
     - Sản phẩm quan tâm.
     - Mục tiêu triển khai.
     """
-
-    normalized = normalize_for_intent(
-        text
-    )
+    normalized = normalize_for_intent(text)
 
     if not normalized:
         return False
 
-    # Câu hỏi yêu cầu nhớ lại không phải
-    # thông tin mới cần lưu.
+    # Câu hỏi yêu cầu nhớ lại không phải thông tin mới cần lưu.
     if is_memory_recall_question(
         normalized
     ):
@@ -524,30 +472,23 @@ def is_customer_information(
         for pattern in introduction_patterns
     )
 
-# ==================================================
 # Greeting
-# ==================================================
-
 def is_greeting(
     text: str,
 ) -> bool:
     """
     Chỉ nhận diện lời chào đơn thuần.
-
     Được nhận diện:
     - hi
     - hi bạn
     - xin chào
     - chào bạn nha
-
     Không được nhận diện là greeting:
     - hi bạn, mình tên T
     - xin chào, bên tôi cần chatbot
     """
 
-    normalized = normalize_for_intent(
-        text
-    )
+    normalized = normalize_for_intent(text)
 
     if not normalized:
         return False
@@ -574,24 +515,15 @@ def is_greeting(
         for pattern in greeting_patterns
     )
 
-# ==================================================
 # Document / RAG question
-# ==================================================
-
 def is_document_question(
     text: str,
 ) -> bool:
     """
-    Chỉ nhận diện RAG khi người dùng có dấu hiệu
-    rõ ràng đang hỏi về tài liệu hoặc file đã nạp.
-
-    Không mặc định mọi câu chưa nhận diện được
-    là document_question.
+    Chỉ nhận diện RAG khi người dùng có dấu hiệu rõ ràng đang hỏi về tài liệu hoặc file đã nạp.
+    Không mặc định mọi câu chưa nhận diện được là document_question.
     """
-
-    normalized = normalize_for_intent(
-        text
-    )
+    normalized = normalize_for_intent(text)
 
     if not normalized:
         return False
@@ -643,18 +575,13 @@ def is_document_question(
         document_keywords,
     )
 
-# ==================================================
 # Intent classifier
-# ==================================================
-
 def classify_intent(
     user_input: str | None,
 ) -> str:
     """
     Phân loại mục đích chính của tin nhắn.
-
     Thứ tự ưu tiên:
-
     1. empty
     2. memory_recall
     3. simple_math
@@ -671,37 +598,24 @@ def classify_intent(
     - document_question không được làm fallback mặc định.
     """
 
-    text = normalize_for_intent(
-        user_input
-    )
+    text = normalize_for_intent(user_input)
 
     if not text:
         return "empty"
 
-    # Phải đứng trước customer_information để tránh:
-    # "Bạn còn nhớ chatbot tôi cần không?"
-    # bị hiểu nhầm là cung cấp nhu cầu mới.
-    if is_memory_recall_question(
-        text
-    ):
+    # Phải đứng trước customer_information để tránh: "Bạn còn nhớ chatbot tôi cần không?" bị hiểu nhầm là cung cấp nhu cầu mới.
+    if is_memory_recall_question(text):
         return "memory_recall"
 
-    if is_simple_math_question(
-        text
-    ):
+    if is_simple_math_question(text):
         return "simple_math"
 
     # Phải đứng trước greeting để câu:
-    # "Hi bạn, mình tên T..."
-    # vẫn được lưu thành customer information.
-    if is_customer_information(
-        text
-    ):
+    # "Hi bạn, mình tên T..." vẫn được lưu thành customer information.
+    if is_customer_information(text):
         return "customer_information"
 
-    if is_greeting(
-        text
-    ):
+    if is_greeting(text):
         return "greeting"
 
     thanks_keywords = [
@@ -772,9 +686,7 @@ def classify_intent(
     ):
         return "bot_capability"
 
-    if is_document_question(
-        text
-    ):
+    if is_document_question(text):
         return "document_question"
 
     return "general_conversation"

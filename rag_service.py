@@ -11,7 +11,6 @@ from rag.retrieval import RetrievalOrchestrator
 def create_rag_pipeline() -> RAGPipeline:
     """
     Khởi tạo đầy đủ RAG pipeline.
-
     LLM provider được chọn thông qua biến:
         LLM_PROVIDER=ollama
         hoặc

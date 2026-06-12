@@ -1,6 +1,5 @@
 from rag.document_loader import DocumentLoader
 
-
 def main():
     loader = DocumentLoader(raw_data_dir="data/raw")
     documents = loader.load_all_documents()

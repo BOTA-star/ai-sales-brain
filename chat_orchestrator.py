@@ -147,6 +147,7 @@ _MEMORY_SIGNALS: dict[str, tuple[str, ...]] = {
         "ngân sách bên tôi",
         "ngân sách bên mình",
         "ngân sách dự kiến",
+        "ngân sách dự tính",
     ),
 
     "problem": (
@@ -201,8 +202,7 @@ def _build_memory_candidate(
     user_input: str,
 ) -> tuple[str, list[str]] | None:
     """
-    Kiểm tra tin nhắn có chứa thông tin khách hàng
-    đáng lưu vào long-term memory hay không.
+    Kiểm tra tin nhắn có chứa thông tin khách hàng đáng lưu vào long-term memory hay không.
 
     Lưu các thông tin có giá trị lâu dài:
     - Danh tính.
@@ -212,32 +212,24 @@ def _build_memory_candidate(
     - Mục tiêu.
     - Khó khăn hiện tại.
     - Ưu tiên và ngân sách.
+    - ...
 
     Không lưu câu hỏi yêu cầu chatbot nhớ lại.
     """
-
-    clean_input = str(
-        user_input or ""
-    ).strip()
+    clean_input = str(user_input or "").strip()
 
     if len(clean_input) < 8:
         return None
     
-        # Lớp bảo vệ thứ hai:
-    # tuyệt đối không lưu câu hỏi recall thành fact.
-    if is_memory_recall_question(
-        clean_input
-    ):
+    # Không lưu câu hỏi recall thành fact.
+    if is_memory_recall_question(clean_input):
         logger.info(
-            "Skip memory because input is "
-            "a memory recall question. input=%s",
+            "Skip memory because input is a memory recall question. input=%s",
             clean_input,
         )
         return None
     
-    normalized_input = (
-        clean_input.casefold()
-    )
+    normalized_input = (clean_input.casefold())
 
     matched_categories: list[str] = []
 
@@ -246,12 +238,9 @@ def _build_memory_candidate(
             signal in normalized_input
             for signal in signals
         ):
-            matched_categories.append(
-                category
-            )
+            matched_categories.append(category)
 
-    # Bổ sung nhận dạng bằng regex để không phụ thuộc
-    # hoàn toàn vào cụm từ cố định.
+    # Bổ sung nhận dạng bằng regex để không phụ thuộc hoàn toàn vào cụm từ cố định.
     regex_category_patterns: dict[str, tuple[str, ...]] = {
         "identity": (
             r"\b(?:mình|tôi|em|tui)\s+"
@@ -335,21 +324,15 @@ def _build_memory_candidate(
         )
         return None
 
-    concepts = list(
-        matched_categories
-    )
+    concepts = list(matched_categories)
 
     for concept in _KNOWN_MEMORY_CONCEPTS:
         if concept.casefold() in normalized_input:
-            concepts.append(
-                concept
-            )
+            concepts.append(concept)
 
     # Loại bỏ trùng lặp nhưng giữ nguyên thứ tự.
     concepts = list(
-        dict.fromkeys(
-            concepts
-        )
+        dict.fromkeys(concepts)
     )
 
     content = (
@@ -365,40 +348,30 @@ def _save_user_memory_safely(
 ) -> dict[str, Any] | None:
     """
     Tự động lưu thông tin quan trọng của khách hàng.
-
-    Nếu AgentMemory gặp lỗi thì chatbot vẫn tiếp tục
-    xử lý và trả lời bình thường.
+    Nếu AgentMemory gặp lỗi thì chatbot vẫn tiếp tục xử lý và trả lời bình thường.
     """
 
-    clean_customer_id = str(
-        customer_id or ""
-    ).strip()
+    clean_customer_id = str(customer_id or "").strip()
 
     if not clean_customer_id:
         logger.warning(
-            "Skip saving memory because "
-            "customer_id is empty."
+            "Skip saving memory because customer_id is empty."
         )
         return None
 
     memory_candidate = (
-        _build_memory_candidate(
-            user_input
-        )
+        _build_memory_candidate(user_input)
     )
 
     if memory_candidate is None:
         logger.info(
-            "No memory candidate detected. "
-            "customer_id=%s input=%s",
+            "No memory candidate detected. customer_id=%s input=%s",
             clean_customer_id,
             user_input,
         )
         return None
 
-    content, concepts = (
-        memory_candidate
-    )
+    content, concepts = (memory_candidate)
 
     logger.info(
         "Saving customer memory. "
@@ -443,8 +416,7 @@ def _save_user_memory_safely(
 
         else:
             logger.warning(
-                "AgentMemory did not save memory. "
-                "customer_id=%s",
+                "AgentMemory did not save memory. customer_id=%s",
                 clean_customer_id,
             )
 
@@ -482,14 +454,10 @@ def _evaluate_math_node(
     node: ast.AST,
 ) -> int | float:
     """
-    Tính biểu thức toán học đơn giản
-    mà không sử dụng eval().
+    Tính biểu thức toán học đơn giản mà không sử dụng eval().
     """
-
     if isinstance(node, ast.Expression):
-        return _evaluate_math_node(
-            node.body
-        )
+        return _evaluate_math_node(node.body)
 
     if (
         isinstance(node, ast.Constant)
@@ -509,13 +477,9 @@ def _evaluate_math_node(
         and type(node.op)
         in _ALLOWED_BINARY_OPERATORS
     ):
-        left_value = _evaluate_math_node(
-            node.left
-        )
+        left_value = _evaluate_math_node(node.left)
 
-        right_value = _evaluate_math_node(
-            node.right
-        )
+        right_value = _evaluate_math_node(node.right)
 
         operation = (
             _ALLOWED_BINARY_OPERATORS[
@@ -523,31 +487,18 @@ def _evaluate_math_node(
             ]
         )
 
-        return operation(
-            left_value,
-            right_value,
-        )
+        return operation(left_value, right_value,)
 
-    if (
-        isinstance(node, ast.UnaryOp)
-        and type(node.op)
-        in _ALLOWED_UNARY_OPERATORS
-    ):
+    if (isinstance(node, ast.UnaryOp) and type(node.op) in _ALLOWED_UNARY_OPERATORS):
         operand_value = (
-            _evaluate_math_node(
-                node.operand
-            )
+            _evaluate_math_node(node.operand)
         )
 
         operation = (
-            _ALLOWED_UNARY_OPERATORS[
-                type(node.op)
-            ]
+            _ALLOWED_UNARY_OPERATORS[type(node.op)]
         )
 
-        return operation(
-            operand_value
-        )
+        return operation(operand_value)
 
     raise ValueError(
         "Biểu thức toán học không được hỗ trợ."
@@ -560,7 +511,6 @@ def get_source_value(
 ) -> Any:
     """
     Lấy giá trị source an toàn.
-
     Hỗ trợ cả:
     - source.file_name
     - source["file_name"]
@@ -570,16 +520,9 @@ def get_source_value(
         return default
 
     if isinstance(source, dict):
-        return source.get(
-            key,
-            default,
-        )
+        return source.get(key,default,)
 
-    return getattr(
-        source,
-        key,
-        default,
-    )
+    return getattr(source,key,default,)
 
 def format_rag_sources(
     sources: list[Any],
@@ -587,32 +530,17 @@ def format_rag_sources(
     """
     Format nguồn tham khảo.
     """
-
     if not sources:
         return ""
 
-    source_lines = [
-        "\n\n---\nNguồn tham khảo:"
-    ]
+    source_lines = ["\n\n---\nNguồn tham khảo:"]
 
-    for index, source in enumerate(
-        sources,
-        start=1,
-    ):
-        file_name = get_source_value(
-            source,
-            "file_name",
-        )
+    for index, source in enumerate(sources,start=1):
+        file_name = get_source_value(source,"file_name")
 
-        page = get_source_value(
-            source,
-            "page",
-        )
+        page = get_source_value(source,"page")
 
-        chunk_index = get_source_value(
-            source,
-            "chunk_index",
-        )
+        chunk_index = get_source_value(source,"chunk_index")
 
         source_lines.append(
             f"{index}. File: {file_name} "
@@ -620,10 +548,7 @@ def format_rag_sources(
             f"| Chunk: {chunk_index}"
         )
 
-    return "\n".join(
-        source_lines
-    )
-
+    return "\n".join(source_lines)
 
 def answer_simple_math(
     user_input: str,
@@ -631,18 +556,12 @@ def answer_simple_math(
     """
     Trả lời phép tính đơn giản bằng AST.
     """
-
     expression_text = (
-        extract_math_expression(
-            user_input
-        )
+        extract_math_expression(user_input)
     )
 
     if not expression_text:
-        return (
-            "Mình chưa nhận diện được "
-            "phép tính trong câu hỏi."
-        )
+        return ("Mình chưa nhận diện được phép tính trong câu hỏi.")
 
     try:
         expression = ast.parse(
@@ -650,15 +569,10 @@ def answer_simple_math(
             mode="eval",
         )
 
-        result = _evaluate_math_node(
-            expression
-        )
+        result = _evaluate_math_node(expression)
 
-        # Hiển thị 2 thay vì 2.0
-        # nếu kết quả là số nguyên.
-        if (
-            isinstance(result, float)
-            and result.is_integer()
+        # Hiển thị 2 thay vì 2.0 nếu kết quả là số nguyên.
+        if (isinstance(result, float) and result.is_integer()
         ):
             result = int(result)
 
@@ -673,27 +587,20 @@ def answer_simple_math(
         TypeError,
         OverflowError,
     ):
-        return (
-            "Mình chưa xử lý được "
-            "phép tính này."
-        )
+        return ("Mình chưa xử lý được phép tính này.")
 
 def _extract_customer_name(
     user_input: str,
 ) -> str:
     """
     Lấy tên khách hàng từ nội dung đã chia sẻ.
-
     Hỗ trợ:
     - Mình tên T
     - Mình tên là T
     - Hi, mình tên T
     - Tôi là Nguyễn Văn An, ...
     """
-
-    text = str(
-        user_input or ""
-    ).strip()
+    text = str(user_input or "").strip()
 
     name_patterns = [
         r"\b(?:mình|tôi|em|tui)\s+"
@@ -716,11 +623,7 @@ def _extract_customer_name(
     ]
 
     for pattern in name_patterns:
-        match = re.search(
-            pattern,
-            text,
-            flags=re.IGNORECASE,
-        )
+        match = re.search(pattern,text,flags=re.IGNORECASE)
 
         if match:
             return match.group(1).strip().title()
@@ -733,40 +636,23 @@ def answer_customer_information(
 ) -> str:
     """
     Xác nhận thông tin khách hàng dựa trên:
-
     - Tin nhắn hiện tại.
     - Memory liên quan đã lưu trước đó.
-
-    Các nhánh cụ thể được ưu tiên trước
-    câu trả lời tổng quát.
+    Các nhánh cụ thể được ưu tiên trước câu trả lời tổng quát.
     """
 
-    clean_input = str(
-        user_input or ""
-    ).strip()
+    clean_input = str(user_input or "").strip()
 
-    combined_context = normalize_text(
-        f"{memory_context}\n{clean_input}"
-    ).lower()
+    combined_context = normalize_text(f"{memory_context}\n{clean_input}").lower()
 
-    customer_name = _extract_customer_name(
-        clean_input
-    )
+    customer_name = _extract_customer_name(clean_input)
 
     if customer_name:
-        opening = (
-            f"Mình hiểu rồi, {customer_name}. "
-        )
+        opening = (f"Mình hiểu rồi, {customer_name}. ")
     else:
         opening = "Mình hiểu rồi. "
-
-    # ==================================================
-    # Chatbot hỗ trợ sale
-    #
-    # Phải đặt trước chăm sóc khách hàng vì câu sale
-    # cũng có thể chứa từ "khách hàng".
-    # ==================================================
-
+        
+    # Phải đặt trước chăm sóc khách hàng vì câu sale cũng có thể chứa từ "khách hàng"
     if (
         "chatbot" in combined_context
         and any(
@@ -781,20 +667,13 @@ def answer_customer_information(
         )
     ):
         return (
-            opening
-            + "Mình đã ghi nhận bạn cần một chatbot "
-            "hỗ trợ hoạt động sale. "
-            "Chatbot sẽ hỗ trợ tư vấn, thu thập thông tin "
-            "và phân loại khách hàng, sau đó nhân viên sale "
+            opening + "Mình đã ghi nhận bạn cần một chatbot hỗ trợ hoạt động sale. "
+            "Chatbot sẽ hỗ trợ tư vấn, thu thập thông tin và phân loại khách hàng, sau đó nhân viên sale "
             "sẽ kiểm tra và quyết định phản hồi cuối cùng. "
-            "Bạn muốn ưu tiên xây dựng tiêu chí phân loại "
-            "khách hàng hay tối ưu tốc độ phản hồi trước?"
+            "Bạn muốn ưu tiên xây dựng tiêu chí phân loại khách hàng hay tối ưu tốc độ phản hồi trước?"
         )
 
-    # ==================================================
     # Chatbot tăng hiệu suất công việc
-    # ==================================================
-
     if (
         "chatbot" in combined_context
         and any(
@@ -818,9 +697,7 @@ def answer_customer_information(
             ]
         ):
             return (
-                opening
-                + "Mình đã ghi nhận bạn đang làm việc "
-                "trong lĩnh vực AI và cần một chatbot "
+                opening + "Mình đã ghi nhận bạn đang làm việc trong lĩnh vực AI và cần một chatbot "
                 "để tăng năng suất công việc. "
                 "Bạn muốn chatbot ưu tiên hỗ trợ phần nào: "
                 "tra cứu thông tin, xử lý công việc lặp lại, "
@@ -828,17 +705,11 @@ def answer_customer_information(
             )
 
         return (
-            opening
-            + "Mình đã ghi nhận bạn cần một chatbot "
-            "để tăng năng suất công việc. "
-            "Bạn muốn chatbot ưu tiên hỗ trợ công việc "
-            "nào trước?"
+            opening + "Mình đã ghi nhận bạn cần một chatbot để tăng năng suất công việc. "
+            "Bạn muốn chatbot ưu tiên hỗ trợ công việc nào trước?"
         )
 
-    # ==================================================
-    # Chăm sóc học viên
-    # ==================================================
-
+    # Chăm sóc người dùng
     if (
         "chatbot" in combined_context
         and (
@@ -848,37 +719,26 @@ def answer_customer_information(
     ):
         return (
             opening
-            + "Bạn đang muốn sử dụng chatbot để hỗ trợ "
-            "chăm sóc học viên. "
-            "Bạn muốn chatbot ưu tiên tư vấn khóa học, "
-            "giải đáp thắc mắc, nhắc lịch hay chăm sóc "
-            "sau đăng ký?"
+            + "Bạn đang muốn sử dụng chatbot để hỗ trợ chăm sóc học viên. "
+            "Bạn muốn chatbot ưu tiên tư vấn khóa học, giải đáp thắc mắc, nhắc lịch hay chăm sóc sau đăng ký?"
         )
 
-    # ==================================================
     # Chăm sóc khách hàng
-    # ==================================================
-
     if (
         "chatbot" in combined_context
         and (
-            "chăm sóc khách hàng" in combined_context
-            or "hỗ trợ khách hàng" in combined_context
+            "chăm sóc khách hàng" in combined_context or "hỗ trợ khách hàng" in combined_context
         )
     ):
         return (
-            opening
-            + "Bạn đang muốn sử dụng chatbot để hỗ trợ "
+            opening + "Bạn đang muốn sử dụng chatbot để hỗ trợ "
             "chăm sóc khách hàng. "
             "Vấn đề cần ưu tiên là tốc độ phản hồi, "
             "xử lý câu hỏi lặp lại, theo dõi khách hàng "
             "hay phân loại khách hàng?"
         )
 
-    # ==================================================
     # Marketing
-    # ==================================================
-
     if any(
         keyword in combined_context
         for keyword in [
@@ -888,16 +748,11 @@ def answer_customer_information(
         ]
     ):
         return (
-            opening
-            + "Bạn đang quan tâm đến hoạt động marketing. "
-            "Bạn muốn ưu tiên tạo nội dung, tìm kiếm khách hàng "
-            "hay tự động hóa quy trình marketing?"
+            opening + "Bạn đang quan tâm đến hoạt động marketing. "
+            "Bạn muốn ưu tiên tạo nội dung, tìm kiếm khách hàng hay tự động hóa quy trình marketing?"
         )
 
-    # ==================================================
     # Thực tập sinh AI
-    # ==================================================
-
     if (
         "thực tập sinh" in combined_context
         and any(
@@ -909,32 +764,20 @@ def answer_customer_information(
         )
     ):
         return (
-            opening
-            + "Mình đã ghi nhận bạn là thực tập sinh AI "
-            "và muốn dùng chatbot để hỗ trợ công việc. "
-            "Bạn cần ưu tiên đọc và sửa code, xử lý dữ liệu, "
-            "kiểm thử hệ thống hay viết báo cáo?"
+            opening + "Mình đã ghi nhận bạn là thực tập sinh AI và muốn dùng chatbot để hỗ trợ công việc. "
+            "Bạn cần ưu tiên đọc và sửa code, xử lý dữ liệu, kiểm thử hệ thống hay viết báo cáo?"
         )
 
-    # ==================================================
     # Có chatbot nhưng chưa rõ mục đích
-    # ==================================================
-
     if "chatbot" in combined_context:
         return (
-            opening
-            + "Mình đã ghi nhận bạn đang cần một chatbot. "
-            "Bạn muốn chatbot hỗ trợ chính cho công việc nội bộ, "
-            "bán hàng, marketing hay chăm sóc khách hàng?"
+            opening + "Mình đã ghi nhận bạn đang cần một chatbot. "
+            "Bạn muốn chatbot hỗ trợ chính cho công việc nội bộ, bán hàng, marketing hay chăm sóc khách hàng?"
         )
 
-    # ==================================================
     # Fallback
-    # ==================================================
-
     return (
-        opening
-        + "Mình đã ghi nhận thông tin bạn vừa chia sẻ. "
+        opening + "Mình đã ghi nhận thông tin bạn vừa chia sẻ. "
         "Bạn muốn ưu tiên giải quyết vấn đề nào trước?"
     )
 
@@ -968,7 +811,6 @@ def _get_memory_concepts(
     """
     Chuẩn hóa concepts của memory.
     """
-
     raw_concepts = memory.get(
         "concepts",
         [],
@@ -992,7 +834,6 @@ def _get_memory_score(
     """
     Lấy relevance score an toàn.
     """
-
     try:
         return float(
             memory.get(
@@ -1016,7 +857,6 @@ def _get_memory_timestamp(
     AgentMemory hiện có thể trả createdAt
     thay vì timestamp.
     """
-
     timestamp_fields = (
         "updatedAt",
         "createdAt",
@@ -1027,10 +867,7 @@ def _get_memory_timestamp(
 
     for field in timestamp_fields:
         raw_value = str(
-            memory.get(
-                field,
-                "",
-            )
+            memory.get(field, "",)
             or ""
         ).strip()
 
@@ -1057,10 +894,7 @@ def _detect_recall_targets(
     Xác định trường thông tin người dùng
     đang yêu cầu nhớ lại.
     """
-
-    normalized = normalize_text(
-        query
-    ).casefold()
+    normalized = normalize_text(query).casefold()
 
     targets: set[str] = set()
 
@@ -1071,9 +905,7 @@ def _detect_recall_targets(
             "là ai",
         ]
     ):
-        targets.add(
-            "identity"
-        )
+        targets.add("identity")
 
     if any(
         keyword in normalized
@@ -1086,9 +918,7 @@ def _detect_recall_targets(
             "đang làm gì",
         ]
     ):
-        targets.add(
-            "business"
-        )
+        targets.add("business")
 
     if any(
         keyword in normalized
@@ -1103,9 +933,7 @@ def _detect_recall_targets(
             "sản phẩm",
         ]
     ):
-        targets.add(
-            "need"
-        )
+        targets.add("need")
 
     if any(
         keyword in normalized
@@ -1115,9 +943,7 @@ def _detect_recall_targets(
             "hiện tại cần gì",
         ]
     ):
-        targets.add(
-            "priority"
-        )
+        targets.add("priority")
 
     if any(
         keyword in normalized
@@ -1130,22 +956,15 @@ def _detect_recall_targets(
             "phân loại khách hàng",
         ]
     ):
-        targets.add(
-            "problem"
-        )
+        targets.add("problem")
 
     if "ưu tiên" in normalized:
-        targets.add(
-            "priority"
-        )
+        targets.add("priority")
 
     if "ngân sách" in normalized:
-        targets.add(
-            "budget"
-        )
+        targets.add("budget")
 
-    # Câu hỏi chung:
-    # "Bạn nhớ gì về mình?"
+    # Câu hỏi chung: "Bạn nhớ gì về mình?"
     if not targets:
         targets = {
             "identity",
@@ -1161,21 +980,13 @@ def _rank_memories(
 ) -> list[dict[str, Any]]:
     """
     Ưu tiên memory mới nhất.
-
-    Với dữ liệu có thể thay đổi như nhu cầu,
-    mục tiêu, vấn đề và ưu tiên, thông tin mới
-    phải được dùng trước thông tin cũ.
+    Với dữ liệu có thể thay đổi như nhu cầu, mục tiêu, vấn đề và ưu tiên, thông tin mới phải được dùng trước thông tin cũ.
     """
-
     return sorted(
         memories,
         key=lambda memory: (
-            _get_memory_timestamp(
-                memory
-            ),
-            _get_memory_score(
-                memory
-            ),
+            _get_memory_timestamp(memory),
+            _get_memory_score(memory),
         ),
         reverse=True,
     )
@@ -1185,10 +996,8 @@ def _filter_memories_by_target(
     target: str,
 ) -> list[dict[str, Any]]:
     """
-    Lọc memory dựa trên concepts phù hợp
-    với trường người dùng đang hỏi.
+    Lọc memory dựa trên concepts phù hợp với trường người dùng đang hỏi.
     """
-
     target_concepts: dict[str, set[str]] = {
         "identity": {
             "identity",
@@ -1231,12 +1040,8 @@ def _filter_memories_by_target(
 
     matched_memories = [
         memory
-        for memory in memories
-        if (
-            _get_memory_concepts(
-                memory
-            )
-            & expected_concepts
+        for memory in memories if (
+            _get_memory_concepts(memory) & expected_concepts
         )
     ]
 
@@ -1246,15 +1051,9 @@ def _is_invalid_recall_value(
     value: str,
 ) -> bool:
     """
-    Loại bỏ giá trị được trích từ câu hỏi
-    thay vì từ dữ liệu thật.
+    Loại bỏ giá trị được trích từ câu hỏi thay vì từ dữ liệu thật.
     """
-
-    normalized = normalize_text(
-        value
-    ).casefold().strip(
-        " .?!"
-    )
+    normalized = normalize_text(value).casefold().strip(" .?!")
 
     if not normalized:
         return True
@@ -1278,8 +1077,7 @@ def _is_invalid_recall_value(
         return True
 
     return (
-        normalized.endswith(" gì")
-        or normalized.endswith(" nào")
+        normalized.endswith(" gì") or normalized.endswith(" nào")
     )
 
 def _extract_business_field(
@@ -1288,7 +1086,6 @@ def _extract_business_field(
     """
     Trích xuất lĩnh vực làm việc từ memory.
     """
-
     patterns = [
         r"\b(?:nhân\s+viên(?:\s+làm\s+việc)?|"
         r"(?:đang\s+)?làm(?:\s+việc)?)\s+"
@@ -1325,13 +1122,11 @@ def _extract_need(
 ) -> str:
     """
     Trích xuất nhu cầu hiện tại từ memory.
-
     Ưu tiên các mẫu cập nhật như:
     - Mình muốn chatbot...
     - Hiện tại mình muốn...
     - Mình cần...
     """
-
     patterns = [
         # Bây giờ mình ưu tiên...
         # Hiện tại tôi đang ưu tiên...
@@ -1375,19 +1170,13 @@ def _extract_need(
         if not matches:
             continue
 
-        # Nếu một memory có nhiều câu,
-        # ưu tiên mẫu xuất hiện sau cùng.
+        # Nếu một memory có nhiều câu, ưu tiên mẫu xuất hiện sau cùng.
         match = matches[-1]
 
-        value = match.group(1).strip(
-            " .?!"
-        )
+        value = match.group(1).strip(" .?!")
 
-        if not _is_invalid_recall_value(
-            value
-        ):
+        if not _is_invalid_recall_value(value):
             return value
-
     return ""
 
 def _extract_priority(
@@ -1396,7 +1185,6 @@ def _extract_priority(
     """
     Trích xuất ưu tiên hiện tại từ memory.
     """
-
     patterns = [
         r"\b(?:(?:bây\s+giờ|hiện\s+tại)\s+)?"
         r"(?:mình|tôi|em|tui)\s+"
@@ -1424,13 +1212,9 @@ def _extract_priority(
         if not matches:
             continue
 
-        value = matches[-1].group(1).strip(
-            " .?!"
-        )
+        value = matches[-1].group(1).strip(" .?!")
 
-        if not _is_invalid_recall_value(
-            value
-        ):
+        if not _is_invalid_recall_value(value):
             return value
 
     return ""
@@ -1450,29 +1234,18 @@ def answer_memory_recall(
 ) -> str:
     """
     Truy xuất đúng trường thông tin người dùng hỏi.
-
     Không liệt kê toàn bộ top memories.
     Không gọi RAG.
     """
+    clean_customer_id = str( customer_id or "").strip()
 
-    clean_customer_id = str(
-        customer_id or ""
-    ).strip()
-
-    clean_query = str(
-        query or ""
-    ).strip()
+    clean_query = str(query or "").strip()
 
     if not clean_customer_id:
-        return (
-            "Mình chưa xác định được thông tin khách hàng "
-            "để kiểm tra bộ nhớ."
-        )
+        return ("Mình chưa xác định được thông tin khách hàng để kiểm tra bộ nhớ.")
 
     if not clean_query:
-        return (
-            "Bạn muốn mình nhớ lại thông tin nào?"
-        )
+        return ("Bạn muốn mình nhớ lại thông tin nào?")
 
     try:
         memories = search_memory(
@@ -1487,31 +1260,18 @@ def answer_memory_recall(
             clean_customer_id,
         )
 
-        return (
-            "Hiện tại mình chưa thể truy xuất "
-            "thông tin đã ghi nhớ."
-        )
+        return ("Hiện tại mình chưa thể truy xuất thông tin đã ghi nhớ.")
 
     if not memories:
-        return (
-            "Hiện tại mình chưa tìm thấy thông tin "
-            "bạn đã chia sẻ trước đó."
-        )
+        return ("Hiện tại mình chưa tìm thấy thông tin bạn đã chia sẻ trước đó.")
 
-    ranked_memories = _rank_memories(
-        memories
-    )
+    ranked_memories = _rank_memories(memories)
 
-    targets = _detect_recall_targets(
-        clean_query
-    )
+    targets = _detect_recall_targets(clean_query)
 
     answer_parts: list[str] = []
 
-    # ==================================================
-    # Identity
-    # ==================================================
-
+    # Định danh
     if "identity" in targets:
         identity_memories = (
             _filter_memories_by_target(
@@ -1523,28 +1283,19 @@ def answer_memory_recall(
         customer_name = ""
 
         for memory in identity_memories:
-            content = _clean_memory_content(
-                memory
-            )
+            content = _clean_memory_content(memory)
 
             customer_name = (
-                _extract_customer_name(
-                    content
-                )
+                _extract_customer_name(content)
             )
 
             if customer_name:
                 break
 
         if customer_name:
-            answer_parts.append(
-                f"Bạn tên {customer_name}."
-            )
+            answer_parts.append(f"Bạn tên {customer_name}.")
 
-    # ==================================================
-    # Business / lĩnh vực
-    # ==================================================
-
+    # Lĩnh vực
     if "business" in targets:
         business_memories = (
             _filter_memories_by_target(
@@ -1556,14 +1307,10 @@ def answer_memory_recall(
         business_field = ""
 
         for memory in business_memories:
-            content = _clean_memory_content(
-                memory
-            )
+            content = _clean_memory_content(memory)
 
             business_field = (
-                _extract_business_field(
-                    content
-                )
+                _extract_business_field(content)
             )
 
             if business_field:
@@ -1575,10 +1322,7 @@ def answer_memory_recall(
                 f"{business_field}."
             )
 
-    # ==================================================
     # Need / chatbot
-    # ==================================================
-
     if "need" in targets:
         need_memories = (
             _filter_memories_by_target(
@@ -1590,23 +1334,17 @@ def answer_memory_recall(
         customer_need = ""
 
         for memory in need_memories:
-            content = _clean_memory_content(
-                memory
-            )
+            content = _clean_memory_content(memory)
 
             customer_need = (
-                _extract_need(
-                    content
-                )
+                _extract_need(content)
             )
 
             if customer_need:
                 break
 
         if customer_need:
-            answer_parts.append(
-                f"Bạn cần {customer_need}."
-            )
+            answer_parts.append(f"Bạn cần {customer_need}.")
 
     if "priority" in targets:
         priority_memories = (
@@ -1619,14 +1357,10 @@ def answer_memory_recall(
         current_priority = ""
 
         for memory in priority_memories:
-            content = _clean_memory_content(
-                memory
-            )
+            content = _clean_memory_content(memory)
 
             current_priority = (
-                _extract_priority(
-                    content
-                )
+                _extract_priority(content)
             )
 
             if current_priority:
@@ -1638,10 +1372,7 @@ def answer_memory_recall(
                 f"{current_priority}."
             )
 
-    # ==================================================
     # Problem
-    # ==================================================
-
     if "problem" in targets:
         problem_memories = (
             _filter_memories_by_target(
@@ -1652,9 +1383,7 @@ def answer_memory_recall(
 
         if problem_memories:
             problem_content = (
-                _clean_memory_content(
-                    problem_memories[0]
-                )
+                _clean_memory_content(problem_memories[0])
             )
 
             if problem_content:
@@ -1676,35 +1405,26 @@ def answer_memory_recall(
     seen_contents: set[str] = set()
 
     for memory in ranked_memories:
-        content = _clean_memory_content(
-            memory
-        )
+        content = _clean_memory_content(memory)
 
         if not content:
             continue
 
-        normalized_content = (
-            content.casefold()
-        )
+        normalized_content = (content.casefold())
 
         if normalized_content in seen_contents:
             continue
 
-        seen_contents.add(
-            normalized_content
-        )
+        seen_contents.add(normalized_content)
 
-        fallback_contents.append(
-            content
-        )
+        fallback_contents.append(content)
 
         if len(fallback_contents) >= 2:
             break
 
     if not fallback_contents:
         return (
-            "Mình tìm thấy memory nhưng chưa trích xuất "
-            "được đúng thông tin bạn đang hỏi."
+            "Mình tìm thấy memory nhưng chưa trích xuất được đúng thông tin bạn đang hỏi."
         )
 
     memory_lines = "\n".join(
@@ -1722,48 +1442,36 @@ def answer_by_rule(
     user_input: str = "",
 ) -> str:
     """
-    Các intent không cần RAG
-    được trả lời trực tiếp bằng rule.
+    Các intent không cần RAG được trả lời trực tiếp bằng rule.
     """
-
     if intent == "empty":
         return (
-            "Bạn vui lòng nhập câu hỏi "
-            "trước nha."
+            "Bạn vui lòng nhập câu hỏi trước nha."
         )
 
     if intent == "greeting":
         return (
             "Hi bạn 👋 Mình là chatbot RAG demo. "
-            "Mình có thể trả lời câu hỏi dựa trên "
-            "tài liệu đã được nạp vào hệ thống."
+            "Mình có thể trả lời câu hỏi dựa trên tài liệu đã được nạp vào hệ thống."
         )
 
     if intent == "thanks":
         return (
             "Không có gì nha 😊 "
-            "Bạn cần hỏi thêm gì về tài liệu "
-            "thì cứ nhắn mình."
+            "Bạn cần hỏi thêm gì về tài liệu thì cứ nhắn mình."
         )
 
     if intent == "upload_info":
         return (
-            "Bạn có thể gửi các tài liệu như "
-            "PDF, DOCX hoặc TXT. "
-            "Tuy nhiên hiện tại bản demo đang "
-            "dùng tài liệu được nạp sẵn trong lúc code. "
-            "Bước tiếp theo có thể thêm chức năng "
-            "upload file để bạn tự nạp tài liệu."
+            "Bạn có thể gửi các tài liệu như PDF, DOCX hoặc TXT. "
+            "Tuy nhiên hiện tại bản demo đang dùng tài liệu được nạp sẵn trong lúc code. "
+            "Bước tiếp theo có thể thêm chức năng upload file để bạn tự nạp tài liệu."
         )
 
     if intent == "bot_capability":
         return (
-            "Hiện tại mình được thiết kế theo chế độ "
-            "Strict RAG, nên chủ yếu trả lời dựa trên "
-            "các tài liệu đã được nạp vào hệ thống. "
-            "Nếu tài liệu không có thông tin phù hợp, "
-            "mình sẽ thông báo là chưa tìm thấy thay vì "
-            "tự dùng kiến thức bên ngoài để trả lời."
+            "Hiện tại mình được thiết kế theo chế độ Strict RAG, nên chủ yếu trả lời dựa trên các tài liệu đã được nạp vào hệ thống. "
+            "Nếu tài liệu không có thông tin phù hợp, mình sẽ thông báo là chưa tìm thấy thay vì tự dùng kiến thức bên ngoài để trả lời."
         )
     return ""
 
@@ -1773,33 +1481,19 @@ def _load_recent_context_safely(
     current_user_message_id: str | None,
 ) -> list[dict[str, str]]:
     """
-    Load short-term context nhưng không để lỗi history
-    làm hỏng toàn bộ lượt trả lời.
-
-    Message user hiện tại được loại khỏi history
-    bằng current_user_message_id.
+    Load short-term context nhưng không để lỗi history làm hỏng toàn bộ lượt trả lời.
+    Message user hiện tại được loại khỏi history bằng current_user_message_id.
     """
+    clean_conversation_id = str(conversation_id or "").strip()
 
-    clean_conversation_id = str(
-        conversation_id or ""
-    ).strip()
-
-    clean_customer_id = str(
-        customer_id or ""
-    ).strip()
+    clean_customer_id = str(customer_id or "").strip()
 
     if not clean_conversation_id:
-        logger.warning(
-            "Cannot load recent context because "
-            "conversation_id is empty."
-        )
+        logger.warning("Cannot load recent context because conversation_id is empty.")
         return []
 
     if not clean_customer_id:
-        logger.warning(
-            "Cannot load recent context because "
-            "customer_id is empty."
-        )
+        logger.warning("Cannot load recent context because customer_id is empty.")
         return []
 
     try:
@@ -1807,9 +1501,7 @@ def _load_recent_context_safely(
             conversation_id=clean_conversation_id,
             customer_id=clean_customer_id,
             limit=RECENT_CONTEXT_LIMIT,
-            exclude_message_id=(
-                current_user_message_id
-            ),
+            exclude_message_id=(current_user_message_id),
         )
 
         if not isinstance(
@@ -1817,8 +1509,7 @@ def _load_recent_context_safely(
             list,
         ):
             logger.warning(
-                "Recent context is not a list. "
-                "conversation_id=%s customer_id=%s",
+                "Recent context is not a list. conversation_id=%s customer_id=%s",
                 clean_conversation_id,
                 clean_customer_id,
             )
@@ -1843,24 +1534,14 @@ def _load_memory_context_safely(
 ) -> str:
     """
     Truy xuất long-term memory từ AgentMemory.
-
-    AgentMemory lỗi không được làm gián đoạn
-    toàn bộ luồng trả lời của chatbot.
+    AgentMemory lỗi không được làm gián đoạn toàn bộ luồng trả lời của chatbot.
     """
+    clean_customer_id = str(customer_id or "").strip()
 
-    clean_customer_id = str(
-        customer_id or ""
-    ).strip()
-
-    clean_query = str(
-        query or ""
-    ).strip()
+    clean_query = str(query or "").strip()
 
     if not clean_customer_id:
-        logger.warning(
-            "Skip memory search because "
-            "customer_id is empty."
-        )
+        logger.warning("Skip memory search because customer_id is empty.")
         return ""
 
     if not clean_query:
@@ -1877,14 +1558,10 @@ def _load_memory_context_safely(
             return ""
 
         memory_context = (
-            format_memory_context(
-                memories
-            )
+            format_memory_context(memories)
         )
 
-        return str(
-            memory_context or ""
-        ).strip()
+        return str(memory_context or "").strip()
 
     except Exception:
         logger.exception(
@@ -1900,16 +1577,13 @@ def should_use_rag(
     intent: str,
 ) -> bool:
     """
-    Quyết định lượt chat hiện tại có cần
-    truy xuất tài liệu bằng RAG hay không.
-
+    Quyết định lượt chat hiện tại có cần truy xuất tài liệu bằng RAG hay không.
     Sau này có thể mở rộng thêm:
     - knowledge-based
     - database-based
     - rule-based
     - API/tool-based
     """
-
     return intent == "document_question"
 
 def answer_general_conversation(
@@ -1919,21 +1593,14 @@ def answer_general_conversation(
 ) -> str:
     """
     Trả lời hội thoại thông thường mà không gọi RAG.
-
-    Đây là fallback tạm thời cho tới khi hệ thống
-    có General LLM Service riêng.
-
+    Đây là fallback tạm thời cho tới khi hệ thống có General LLM Service riêng.
     Không sử dụng nguồn tài liệu.
     """
-
-    clean_input = normalize_text(
-        user_input
-    )
+    clean_input = normalize_text(user_input)
 
     normalized = clean_input.lower()
 
-    # Xử lý tình huống chatbot chậm
-    # và chưa phân loại được khách hàng.
+    # Xử lý tình huống chatbot chậm và chưa phân loại được khách hàng.
     if (
         "chatbot" in normalized
         and (
@@ -2025,14 +1692,9 @@ def get_chat_answer(
     6. Các câu thông thường đi qua general conversation.
     7. Chỉ hiển thị nguồn trong nhánh RAG.
     """
+    clean_user_input = str(user_input or "").strip()
 
-    clean_user_input = str(
-        user_input or ""
-    ).strip()
-
-    intent = classify_intent(
-        clean_user_input
-    )
+    intent = classify_intent(clean_user_input)
 
     print(
         "[ROUTER]",
@@ -2042,9 +1704,7 @@ def get_chat_answer(
         },
     )
 
-    use_rag = should_use_rag(
-        intent
-    )
+    use_rag = should_use_rag(intent)
 
     logger.info(
         "Chat routing. intent=%s use_rag=%s "
@@ -2055,20 +1715,14 @@ def get_chat_answer(
         customer_id,
     )
 
-    # ==================================================
     # 1. Memory recall
-    # ==================================================
-
     if intent == "memory_recall":
         return answer_memory_recall(
             customer_id=customer_id,
             query=clean_user_input,
         )
 
-    # ==================================================
-    # 2. Lưu thông tin khách hàng
-    # ==================================================
-    
+    # 2. Lưu thông tin khách hàng    
     memory_save_intents = {
         "customer_information",
         "general_conversation",
@@ -2085,19 +1739,13 @@ def get_chat_answer(
             user_input=clean_user_input,
         )
 
-    # ==================================================
     # 3. Simple math
-    # ==================================================
-
     if intent == "simple_math":
         return answer_simple_math(
             clean_user_input
         )
 
-    # ==================================================
     # 4. Các rule đơn giản
-    # ==================================================
-
     rule_answer = answer_by_rule(
         intent=intent,
         user_input=clean_user_input,
@@ -2106,10 +1754,7 @@ def get_chat_answer(
     if rule_answer:
         return rule_answer
 
-    # ==================================================
     # 5. Load recent conversation context
-    # ==================================================
-
     recent_context = (
         _load_recent_context_safely(
             conversation_id=conversation_id,
@@ -2120,8 +1765,7 @@ def get_chat_answer(
         )
     )
 
-    # Fallback khi app không truyền
-    # current_user_message_id.
+    # Fallback khi app không truyền current_user_message_id.
     if (
         not current_user_message_id
         and recent_context
@@ -2150,10 +1794,7 @@ def get_chat_answer(
                 recent_context[:-1]
             )
 
-    # ==================================================
     # 6. Load AgentMemory context
-    # ==================================================
-
     memory_context = (
         _load_memory_context_safely(
             customer_id=customer_id,
@@ -2168,13 +1809,8 @@ def get_chat_answer(
             memory_context=memory_context,
         )
 
-    # ==================================================
     # 7. General conversation
-    #
-    # Không gọi RAG.
-    # Không hiển thị nguồn tài liệu.
-    # ==================================================
-
+    # Không gọi RAG. Không hiển thị nguồn tài liệu.
     if not use_rag:
         return answer_general_conversation(
             user_input=clean_user_input,
@@ -2182,12 +1818,8 @@ def get_chat_answer(
             memory_context=memory_context,
         )
 
-    # ==================================================
     # 8. RAG document question
-    #
     # Chỉ chạy khi use_rag=True.
-    # ==================================================
-
     try:
         rag_response = (
             rag_pipeline.answer(
@@ -2212,23 +1844,15 @@ def get_chat_answer(
         ) or []
 
         if not answer:
-            return (
-                "Mình chưa nhận được câu trả lời phù hợp từ hệ thống tài liệu."
-            )
+            return ("Mình chưa nhận được câu trả lời phù hợp từ hệ thống tài liệu.")
 
-        # ==================================================
         # Bước 5:
         # Chỉ hiện nguồn trong nhánh RAG.
-        # ==================================================
-
         if not sources:
             return answer
 
         return (
-            answer
-            + format_rag_sources(
-                sources
-            )
+            answer + format_rag_sources(sources)
         )
 
     except Exception:
@@ -2241,6 +1865,4 @@ def get_chat_answer(
             intent,
         )
 
-        return (
-            "Hiện tại hệ thống đang gặp lỗi khi truy xuất tài liệu. Bạn vui lòng thử lại."
-        )
+        return ("Hiện tại hệ thống đang gặp lỗi khi truy xuất tài liệu. Bạn vui lòng thử lại.")

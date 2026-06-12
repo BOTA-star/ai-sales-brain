@@ -19,17 +19,11 @@ def create_customer(
     external_id: str,
 ) -> str:
     """
-    Tìm hoặc tạo customer riêng
-    theo external_id của trình duyệt demo.
-
-    Sử dụng UPSERT để tránh lỗi khi có hai request
-    đồng thời cùng tạo một external_id.
+    Tìm hoặc tạo customer riêng theo external_id của trình duyệt demo.
+    Sử dụng UPSERT để tránh lỗi khi có hai request đồng thời cùng tạo một external_id.
     """
-
     if not external_id:
-        raise ValueError(
-            "external_id is required"
-        )
+        raise ValueError("external_id is required")
 
     conn = get_db_connection()
 
@@ -56,8 +50,7 @@ def create_customer(
                         DEFAULT_CUSTOMER_NAME,
                         "web",
                         (
-                            "Khách demo được tạo từ "
-                            "Streamlit chatbot"
+                            "Khách demo được tạo từ Streamlit chatbot"
                         ),
                     ),
                 )
@@ -65,13 +58,9 @@ def create_customer(
                 inserted_customer = cur.fetchone()
 
                 if not inserted_customer:
-                    raise RuntimeError(
-                        "Could not create or load customer."
-                    )
+                    raise RuntimeError("Could not create or load customer.")
 
-                return str(
-                    inserted_customer[0]
-                )
+                return str(inserted_customer[0])
 
     finally:
         conn.close()
@@ -81,37 +70,21 @@ def create_customer_if_needed(
     external_id: str,
 ) -> str:
     """
-    Lấy customer_id trong session nếu customer hiện tại
-    khớp với external_id.
-
+    Lấy customer_id trong session nếu customer hiện tại khớp với external_id.
     Nếu chưa có thì tìm hoặc tạo customer trong database.
     """
+    customer_id = session_state.get("customer_id")
 
-    customer_id = session_state.get(
-        "customer_id"
-    )
+    customer_external_id = session_state.get("customer_external_id")
 
-    customer_external_id = session_state.get(
-        "customer_external_id"
-    )
-
-    if (
-        customer_id
-        and customer_external_id == external_id
-    ):
+    if (customer_id and customer_external_id == external_id):
         return str(customer_id)
 
-    customer_id = create_customer(
-        external_id
-    )
+    customer_id = create_customer(external_id)
 
-    session_state[
-        "customer_id"
-    ] = customer_id
+    session_state["customer_id"] = customer_id
 
-    session_state[
-        "customer_external_id"
-    ] = external_id
+    session_state["customer_external_id"] = external_id
 
     return customer_id
 
@@ -121,11 +94,8 @@ def create_conversation(
     """
     Tạo conversation mới cho đúng customer.
     """
-
     if not customer_id:
-        raise ValueError(
-            "customer_id is required"
-        )
+        raise ValueError("customer_id is required")
 
     conn = get_db_connection()
 
@@ -151,18 +121,12 @@ def create_conversation(
                     ),
                 )
 
-                inserted_conversation = (
-                    cur.fetchone()
-                )
+                inserted_conversation = (cur.fetchone())
 
                 if not inserted_conversation:
-                    raise RuntimeError(
-                        "Could not create conversation."
-                    )
+                    raise RuntimeError("Could not create conversation.")
 
-                return str(
-                    inserted_conversation[0]
-                )
+                return str(inserted_conversation[0])
 
     finally:
         conn.close()
@@ -171,19 +135,15 @@ def load_conversations(
     customer_id: str,
 ) -> list[dict[str, Any]]:
     """
-    Chỉ lấy conversation thuộc customer hiện tại
-    và đã có ít nhất một tin nhắn từ user.
+    Chỉ lấy conversation thuộc customer hiện tại và đã có ít nhất một tin nhắn từ user.
     """
-
     if not customer_id:
         return []
 
     conn = get_db_connection()
 
     try:
-        with conn.cursor(
-            cursor_factory=RealDictCursor
-        ) as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
                 SELECT
@@ -208,9 +168,7 @@ def load_conversations(
                 (customer_id,),
             )
 
-            return list(
-                cur.fetchall()
-            )
+            return list(cur.fetchall())
 
     finally:
         conn.close()
@@ -222,39 +180,24 @@ def save_message(
     content: str,
 ) -> str:
     """
-    Lưu message sau khi kiểm tra conversation
-    thuộc đúng customer.
-
+    Lưu message sau khi kiểm tra conversation thuộc đúng customer.
     Hàm trả về message_id vừa được tạo.
     """
+    normalized_sender = (sender or "").strip().lower()
 
-    normalized_sender = (
-        sender or ""
-    ).strip().lower()
-
-    normalized_content = (
-        content or ""
-    ).strip()
+    normalized_content = (content or "").strip()
 
     if not conversation_id:
-        raise ValueError(
-            "conversation_id is required"
-        )
+        raise ValueError("conversation_id is required")
 
     if not customer_id:
-        raise ValueError(
-            "customer_id is required"
-        )
+        raise ValueError("customer_id is required")
 
     if normalized_sender not in VALID_SENDERS:
-        raise ValueError(
-            f"Invalid sender: {sender}"
-        )
+        raise ValueError(f"Invalid sender: {sender}")
 
     if not normalized_content:
-        raise ValueError(
-            "Message content cannot be empty"
-        )
+        raise ValueError("Message content cannot be empty")
 
     conn = get_db_connection()
 
@@ -288,10 +231,7 @@ def save_message(
                 inserted = cur.fetchone()
 
                 if not inserted:
-                    raise PermissionError(
-                        "Conversation does not belong "
-                        "to the current customer."
-                    )
+                    raise PermissionError("Conversation does not belong to the current customer.")
 
                 cur.execute(
                     """
@@ -306,9 +246,7 @@ def save_message(
                     ),
                 )
 
-                return str(
-                    inserted[0]
-                )
+                return str(inserted[0])
 
     finally:
         conn.close()
@@ -318,19 +256,15 @@ def load_messages(
     customer_id: str,
 ) -> list[dict[str, str]]:
     """
-    Load toàn bộ message đúng thứ tự
-    và đúng phạm vi customer.
+    Load toàn bộ message đúng thứ tự và đúng phạm vi customer.
     """
-
     if not conversation_id or not customer_id:
         return []
 
     conn = get_db_connection()
 
     try:
-        with conn.cursor(
-            cursor_factory=RealDictCursor
-        ) as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
                 SELECT
@@ -369,15 +303,9 @@ def get_recent_context(
 ) -> list[dict[str, str]]:
     """
     Lấy short-term context gần nhất.
-
-    exclude_message_id được dùng để loại message user
-    hiện tại ra khỏi history, tránh câu hỏi bị đưa
-    vào prompt hai lần.
-
-    Đây là lịch sử chat gần nhất,
-    chưa phải long-term Agent Memory.
+    exclude_message_id được dùng để loại message user hiện tại ra khỏi history, tránh câu hỏi bị đưa vào prompt hai lần.
+    Đây là lịch sử chat gần nhất, chưa phải long-term Agent Memory.
     """
-
     if not conversation_id or not customer_id:
         return []
 
@@ -397,9 +325,7 @@ def get_recent_context(
     conn = get_db_connection()
 
     try:
-        with conn.cursor(
-            cursor_factory=RealDictCursor
-        ) as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
                 SELECT
@@ -427,12 +353,9 @@ def get_recent_context(
                 ),
             )
 
-            rows = list(
-                cur.fetchall()
-            )
+            rows = list(cur.fetchall())
 
-            # Query lấy mới nhất trước.
-            # Đảo lại để LLM nhận lịch sử từ cũ đến mới.
+            # Query lấy mới nhất trước. Đảo lại để LLM nhận lịch sử từ cũ đến mới.
             rows.reverse()
 
             return [
@@ -453,13 +376,9 @@ def update_conversation_title_if_needed(
 ) -> None:
     """
     Dùng câu hỏi đầu tiên làm tiêu đề conversation.
-
     Chỉ cập nhật nếu tiêu đề hiện tại vẫn là tiêu đề mặc định.
     """
-
-    title = (
-        user_input or ""
-    ).strip()
+    title = (user_input or "").strip()
 
     if (
         not conversation_id
@@ -506,11 +425,8 @@ def init_chat_session(
 ) -> None:
     """
     Khởi tạo customer và giao diện chat.
-
-    Conversation chỉ được tạo khi
-    user gửi tin nhắn đầu tiên.
+    Conversation chỉ được tạo khi user gửi tin nhắn đầu tiên.
     """
-
     create_customer_if_needed(
         session_state,
         external_id,

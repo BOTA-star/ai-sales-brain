@@ -26,17 +26,13 @@ def _get_float(name: str, default: float) -> float:
     except ValueError as exc:
         raise ValueError(f"{name} must be a number.") from exc
 
-# =========================
 # Application
-# =========================
-
 USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
 
 DEFAULT_CUSTOMER_NAME = "Khách AI Sales Brain"
 
 WELCOME_MESSAGE = (
-    "Chào bạn, mình là chatbot AI demo. "
-    "Bạn muốn hỏi gì?"
+    "Chào bạn, mình là chatbot AI demo. Bạn muốn hỏi gì?"
 )
 
 CHAT_FRAME_HEIGHT = _get_int(
@@ -54,10 +50,7 @@ RECENT_CONTEXT_LIMIT = _get_int(
     8,
 )
 
-# =========================
 # PostgreSQL
-# =========================
-
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "",
@@ -68,20 +61,14 @@ DB_CONNECT_TIMEOUT = _get_int(
     10,
 )
 
-# =========================
 # LLM Provider
 # ollama | openrouter
-# =========================
-
 LLM_PROVIDER = os.getenv(
     "LLM_PROVIDER",
     "ollama",
 ).strip().lower()
 
-# ==================================================
 # Ollama local
-# ==================================================
-
 OLLAMA_HOST = os.getenv(
     "OLLAMA_HOST",
     "http://localhost:11434",
@@ -107,11 +94,8 @@ OLLAMA_MAX_TOKENS = _get_int(
     1000,
 )
 
-# =========================
 # OpenRouter
 # Dùng sau khi deploy công ty
-# =========================
-
 OPENROUTER_BASE_URL = os.getenv(
     "OPENROUTER_BASE_URL",
     "https://openrouter.ai/api/v1",
@@ -132,10 +116,7 @@ OPENROUTER_TIMEOUT = _get_int(
     90,
 )
 
-# =========================
 # RAG
-# =========================
-
 RAG_PERSIST_DIR = os.getenv(
     "RAG_PERSIST_DIR",
     "storage/vector_db",

@@ -9,16 +9,13 @@ import requests
 from requests import Session
 from requests.exceptions import RequestException
 
-
 logger = logging.getLogger(__name__)
 
 class MemoryService:
     """
     Module trung gian dùng để giao tiếp với AgentMemory REST API.
-
     Memory được phân tách theo customer_id bằng project:
-
-        chatbot-rag/customer/{customer_id}
+    chatbot-rag/customer/{customer_id}
     """
 
     def __init__(
@@ -79,7 +76,6 @@ class MemoryService:
     def health_check(self) -> bool:
         """
         Kiểm tra AgentMemory có đang hoạt động hay không.
-
         Trả về:
             True: AgentMemory healthy.
             False: AgentMemory không thể kết nối hoặc không healthy.
@@ -94,14 +90,9 @@ class MemoryService:
             data = response.json()
 
             root_status = str(data.get("status", "")).lower()
-            health_status = str(
-                data.get("health", {}).get("status", "")
-            ).lower()
+            health_status = str(data.get("health", {}).get("status", "")).lower()
 
-            return (
-                root_status == "healthy"
-                or health_status == "healthy"
-            )
+            return (root_status == "healthy" or health_status == "healthy")
 
         except (RequestException, ValueError, TypeError) as exc:
             logger.warning(
@@ -119,7 +110,6 @@ class MemoryService:
     ) -> dict[str, Any] | None:
         """
         Lưu một Memory cho khách hàng.
-
         Trả về thông tin Memory khi thành công.
         Trả về None nếu AgentMemory không khả dụng hoặc lưu thất bại.
         """
@@ -181,9 +171,7 @@ class MemoryService:
     ) -> list[dict[str, Any]]:
         """
         Tìm Memory liên quan của một khách hàng.
-
-        Sử dụng endpoint /search thay vì /smart-search để bảo đảm
-        dữ liệu được lọc đúng theo project của customer_id.
+        Sử dụng endpoint /search thay vì /smart-search để bảo đảm dữ liệu được lọc đúng theo project của customer_id.
         """
         normalized_query = query.strip()
 
@@ -288,7 +276,6 @@ class MemoryService:
             )
 
         return "\n\n".join(context_parts)
-
 
 _default_memory_service = MemoryService()
 

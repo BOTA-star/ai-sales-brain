@@ -22,11 +22,7 @@ from ui_components import (
     get_global_css,
 )
 
-
-# ==================================================
-# Streamlit configuration
-# ==================================================
-
+# Thiết lập Streamlit
 st.set_page_config(
     page_title="AI Chatbot Demo",
     page_icon="🤖",
@@ -34,37 +30,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-
-# ==================================================
-# Cached resources
-# ==================================================
-
+# Tài nguyên được lưu Cache
 @st.cache_resource
 def get_rag_pipeline():
     """
-    Chỉ khởi tạo embedding model, vector store
-    và LLM client một lần trong vòng đời ứng dụng.
+    Chỉ khởi tạo embedding model, vector store và LLM client một lần trong vòng đời ứng dụng.
     """
-
     return create_rag_pipeline()
 
-
-# ==================================================
-# Helper functions
-# ==================================================
-
+# Quản lý lịch sử hội thoại
 def shorten_title(
     title: str | None,
     max_length: int = 32,
 ) -> str:
     """
-    Rút gọn tiêu đề conversation để hiển thị
-    trong danh sách lịch sử.
+    Rút gọn tiêu đề conversation để hiển thị trong danh sách lịch sử.
     """
 
-    clean_title = str(
-        title or ""
-    ).strip()
+    clean_title = str(title or "").strip()
 
     if not clean_title:
         return "Cuộc trò chuyện mới"
@@ -72,85 +55,58 @@ def shorten_title(
     if len(clean_title) <= max_length:
         return clean_title
 
-    return (
-        clean_title[:max_length]
-        + "..."
-    )
-
+    return (clean_title[:max_length] + "...")
 
 def reset_current_chat() -> None:
     """
     Reset giao diện về một cuộc trò chuyện mới.
-
     Chưa tạo conversation trong database.
-    Conversation chỉ được tạo khi user gửi
-    câu hỏi đầu tiên.
+    Conversation chỉ được tạo khi user gửi câu hỏi đầu tiên.
     """
 
-    st.session_state[
-        "conversation_id"
-    ] = None
+    st.session_state["conversation_id"] = None
 
-    st.session_state[
-        "messages"
-    ] = [
+    st.session_state["messages"] = [
         {
             "role": "assistant",
             "content": WELCOME_MESSAGE,
         }
     ]
 
-
 def select_conversation(
     conversation_id: str,
     customer_id: str,
 ) -> None:
     """
-    Chọn một conversation và load lại toàn bộ
-    messages thuộc đúng customer hiện tại.
+    Chọn một conversation và load lại toàn bộ messages thuộc đúng customer hiện tại.
     """
 
-    st.session_state[
-        "conversation_id"
-    ] = conversation_id
+    st.session_state["conversation_id"] = conversation_id
 
-    st.session_state[
-        "messages"
-    ] = load_messages(
+    st.session_state["messages"] = load_messages(
         conversation_id=conversation_id,
         customer_id=customer_id,
     )
 
-
-# ==================================================
-# Global UI
-# ==================================================
-
+# Giao diện chung
 st.markdown(
     get_global_css(),
     unsafe_allow_html=True,
 )
 
-
-# ==================================================
-# Initialize browser user and chat session
-# ==================================================
+# Khởi tạo User và Session chat
 
 # Mỗi trình duyệt có một client_id riêng.
-client_id = get_or_create_client_id(
-    st.session_state
-)
+client_id = get_or_create_client_id(st.session_state)
 
-# Khởi tạo messages và customer
-# cho lần truy cập đầu tiên.
+# Khởi tạo messages và customer cho lần truy cập đầu tiên.
 if "messages" not in st.session_state:
     init_chat_session(
         session_state=st.session_state,
         external_id=client_id,
     )
 
-# Lấy customer_id gắn với
-# trình duyệt hiện tại.
+# Lấy customer_id gắn với trình duyệt hiện tại.
 customer_id = create_customer_if_needed(
     session_state=st.session_state,
     external_id=client_id,
@@ -162,28 +118,17 @@ st.session_state.setdefault(
     None,
 )
 
-st.caption(
-    f"Debug customer_id: {customer_id}"
-)
+st.caption(f"Debug customer_id: {customer_id}")
 
-# ==================================================
-# Main layout
-# ==================================================
-
+# Layout chính
 left_col, right_col = st.columns(
     [1, 4],
     gap="large",
 )
 
-
-# ==================================================
-# Left column: conversation history
-# ==================================================
-
+# Bên trái: Lịch sử hội thoại
 with left_col:
-    conversations = load_conversations(
-        customer_id=customer_id
-    )
+    conversations = load_conversations(customer_id=customer_id)
 
     st.markdown(
         f"""
@@ -222,42 +167,29 @@ with left_col:
 
     with history_box:
         if not conversations:
-            st.caption(
-                "Chưa có cuộc trò chuyện nào."
-            )
+            st.caption("Chưa có cuộc trò chuyện nào.")
 
         else:
             current_conversation_id = (
-                st.session_state.get(
-                    "conversation_id"
-                )
+                st.session_state.get("conversation_id")
             )
 
             for index, conversation in enumerate(
                 conversations
             ):
-                history_conversation_id = str(
-                    conversation["id"]
-                )
+                history_conversation_id = str(conversation["id"])
 
                 conversation_title = (
-                    conversation.get(
-                        "title"
-                    )
+                    conversation.get("title")
                     or (
                         "Cuộc trò chuyện "
                         f"{index + 1}"
                     )
                 )
 
-                display_title = shorten_title(
-                    conversation_title
-                )
+                display_title = shorten_title(conversation_title)
 
-                is_current = (
-                    history_conversation_id
-                    == current_conversation_id
-                )
+                is_current = (history_conversation_id== current_conversation_id)
 
                 button_label = (
                     f"● {display_title}"
@@ -274,19 +206,13 @@ with left_col:
                     use_container_width=True,
                 ):
                     select_conversation(
-                        conversation_id=(
-                            history_conversation_id
-                        ),
+                        conversation_id=(history_conversation_id),
                         customer_id=customer_id,
                     )
 
                     st.rerun()
 
-
-# ==================================================
-# Right column: chat content and input
-# ==================================================
-
+# Bên phải: Nơi diễn ra đoạn hội thoại
 with right_col:
     st.iframe(
         build_chat_html(
@@ -323,42 +249,27 @@ with right_col:
                 )
             )
 
-
-# ==================================================
-# Handle submitted message
-# ==================================================
-
+# Xử lý tin nhắn vừa nhận
 clean_user_input = str(
     user_input or ""
 ).strip()
 
-
 if submitted and clean_user_input:
     active_conversation_id = (
-        st.session_state.get(
-            "conversation_id"
-        )
+        st.session_state.get("conversation_id")
     )
 
-    # Chỉ tạo conversation khi user
-    # gửi câu đầu tiên.
+    # Chỉ tạo conversation khi user gửi câu đầu tiên.
     if not active_conversation_id:
         active_conversation_id = (
-            create_conversation(
-                customer_id=customer_id
-            )
+            create_conversation(customer_id=customer_id)
         )
 
-        st.session_state[
-            "conversation_id"
-        ] = active_conversation_id
+        st.session_state["conversation_id"] = active_conversation_id
 
-        # Giữ nguyên chức năng hiện tại:
-        # lưu welcome message vào conversation mới.
+        # Giữ nguyên chức năng lưu welcome message vào conversation mới.
         save_message(
-            conversation_id=(
-                active_conversation_id
-            ),
+            conversation_id=(active_conversation_id),
             customer_id=customer_id,
             sender="assistant",
             content=WELCOME_MESSAGE,
@@ -377,9 +288,7 @@ if submitted and clean_user_input:
     # Lưu message user vào database
     # và lấy ID của message vừa tạo.
     current_user_message_id = save_message(
-        conversation_id=(
-            active_conversation_id
-        ),
+        conversation_id=(active_conversation_id),
         customer_id=customer_id,
         sender="user",
         content=clean_user_input,
@@ -388,9 +297,7 @@ if submitted and clean_user_input:
     # Dùng câu hỏi đầu tiên làm
     # tiêu đề conversation.
     update_conversation_title_if_needed(
-        conversation_id=(
-            active_conversation_id
-        ),
+        conversation_id=(active_conversation_id),
         customer_id=customer_id,
         user_input=clean_user_input,
     )
@@ -402,14 +309,10 @@ if submitted and clean_user_input:
     # khỏi recent context.
     answer = get_chat_answer(
         user_input=clean_user_input,
-        conversation_id=(
-            active_conversation_id
-        ),
+        conversation_id=(active_conversation_id),
         customer_id=customer_id,
         rag_pipeline=get_rag_pipeline(),
-        current_user_message_id=(
-            current_user_message_id
-        ),
+        current_user_message_id=(current_user_message_id),
     )
 
     # Hiển thị câu trả lời trên UI.
@@ -424,9 +327,7 @@ if submitted and clean_user_input:
 
     # Lưu câu trả lời vào database.
     save_message(
-        conversation_id=(
-            active_conversation_id
-        ),
+        conversation_id=(active_conversation_id),
         customer_id=customer_id,
         sender="assistant",
         content=answer,
@@ -435,9 +336,7 @@ if submitted and clean_user_input:
     # Chạy lại để cập nhật chat và sidebar.
     st.rerun()
 
-
 elif submitted:
     st.warning(
-        "Bạn vui lòng nhập nội dung "
-        "trước khi gửi."
+        "Bạn vui lòng nhập nội dung trước khi gửi."
     )

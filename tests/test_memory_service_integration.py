@@ -4,22 +4,18 @@ import sys
 import uuid
 from pathlib import Path
 
-
 # Cho phép file trong thư mục tests import module ở thư mục gốc.
 ROOT_DIR = Path(__file__).resolve().parents[1]
 
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-
-from memory_service import MemoryService  # noqa: E402
-
+from memory_service import MemoryService 
 
 def require(condition: bool, message: str) -> None:
     """Dừng kiểm thử nếu điều kiện không đạt."""
     if not condition:
         raise AssertionError(message)
-
 
 def main() -> None:
     service = MemoryService()
@@ -29,10 +25,7 @@ def main() -> None:
     other_customer_id = f"module-other-{uuid.uuid4().hex[:8]}"
 
     content = (
-        f"{marker}: Khách hàng Lan đang quan tâm DigiAI Platform, "
-        "ưu tiên triển khai chatbot chăm sóc khách hàng "
-        "và dự kiến bắt đầu trong tháng sau."
-    )
+        f"{marker}: Khách hàng Lan đang quan tâm DigiAI Platform, ưu tiên triển khai chatbot chăm sóc khách hàng và dự kiến bắt đầu trong tháng sau.")
 
     print("=" * 70)
     print("KIỂM THỬ MEMORY SERVICE")
