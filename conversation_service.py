@@ -15,7 +15,6 @@ VALID_SENDERS = {
     "system",
 }
 
-
 def create_customer(
     external_id: str,
 ) -> str:
@@ -77,7 +76,6 @@ def create_customer(
     finally:
         conn.close()
 
-
 def create_customer_if_needed(
     session_state: MutableMapping[str, Any],
     external_id: str,
@@ -116,7 +114,6 @@ def create_customer_if_needed(
     ] = external_id
 
     return customer_id
-
 
 def create_conversation(
     customer_id: str,
@@ -170,7 +167,6 @@ def create_conversation(
     finally:
         conn.close()
 
-
 def load_conversations(
     customer_id: str,
 ) -> list[dict[str, Any]]:
@@ -218,7 +214,6 @@ def load_conversations(
 
     finally:
         conn.close()
-
 
 def save_message(
     conversation_id: str,
@@ -318,7 +313,6 @@ def save_message(
     finally:
         conn.close()
 
-
 def load_messages(
     conversation_id: str,
     customer_id: str,
@@ -366,7 +360,6 @@ def load_messages(
 
     finally:
         conn.close()
-
 
 def get_recent_context(
     conversation_id: str,
@@ -452,7 +445,6 @@ def get_recent_context(
 
     finally:
         conn.close()
-
 
 def update_conversation_title_if_needed(
     conversation_id: str,
