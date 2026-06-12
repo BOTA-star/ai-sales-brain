@@ -2,7 +2,6 @@ import html
 
 from config import CHAT_FRAME_HEIGHT
 
-
 def get_global_css() -> str:
     return """
 <style>
@@ -207,7 +206,6 @@ iframe {
 </style>
 """
 
-
 def render_messages(messages) -> str:
     html_messages = ""
 
@@ -229,7 +227,6 @@ def render_messages(messages) -> str:
             """
 
     return html_messages
-
 
 def build_chat_html(messages) -> str:
     return f"""

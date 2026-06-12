@@ -296,6 +296,7 @@ def is_customer_information(
     - Nhu cầu.
     - Sản phẩm quan tâm.
     - Mục tiêu triển khai.
+    - Nhu cầu sale / lead / đội kinh doanh.
     """
     normalized = normalize_for_intent(text)
 
@@ -417,6 +418,54 @@ def is_customer_information(
         "bây giờ tôi ưu tiên",
         "mình đang ưu tiên",
         "tôi đang ưu tiên",
+
+        # Sale / lead / đội kinh doanh
+        "tôi muốn hệ thống",
+        "mình muốn hệ thống",
+        "em muốn hệ thống",
+        "bên tôi muốn hệ thống",
+        "bên mình muốn hệ thống",
+
+        "tôi muốn công cụ",
+        "mình muốn công cụ",
+        "bên tôi muốn công cụ",
+        "bên mình muốn công cụ",
+
+        "cần hệ thống",
+        "cần công cụ",
+        "hệ thống hỗ trợ",
+        "công cụ hỗ trợ",
+        "giải pháp hỗ trợ",
+
+        "hỗ trợ đội kinh doanh",
+        "hỗ trợ đội sale",
+        "hỗ trợ sale",
+        "hỗ trợ sales",
+        "hỗ trợ nhân viên sale",
+        "hỗ trợ nhân viên kinh doanh",
+
+        "xử lý lead",
+        "quản lý lead",
+        "phân loại lead",
+        "chăm sóc lead",
+        "theo dõi lead",
+        "tăng tốc xử lý lead",
+
+        "quản lý khách tiềm năng",
+        "phân loại khách tiềm năng",
+        "chăm sóc khách tiềm năng",
+        "theo dõi khách tiềm năng",
+
+        "đội kinh doanh xử lý",
+        "đội sale xử lý",
+        "sale xử lý",
+        "sales xử lý",
+
+        "tăng tỷ lệ chốt",
+        "tăng tỉ lệ chốt",
+        "tối ưu quy trình sale",
+        "tối ưu quy trình sales",
+        "tối ưu quy trình bán hàng",
     ]
 
     if contains_phrase(
@@ -457,9 +506,43 @@ def is_customer_information(
         r"(?:đang\s+)?(?:cần|muốn|gặp|kinh doanh)\s+"
         r"[^?]{1,150}",
 
+        # Mình muốn chatbot / giải pháp / hệ thống / công cụ...
         r"\b(?:mình|tôi|em|tui)\s+"
-        r"muốn\s+(?:chatbot|giải\s+pháp)\s+[^?]{1,180}",
+        r"muốn\s+"
+        r"(?:chatbot|giải\s+pháp|hệ\s+thống|công\s+cụ|ai)\s+"
+        r"[^?]{1,180}",
 
+        # Mình cần hệ thống/công cụ/giải pháp liên quan sale hoặc lead
+        r"\b(?:mình|tôi|em|tui)\s+"
+        r"(?:đang\s+)?cần\s+"
+        r"(?:(?:hệ\s+thống|công\s+cụ|giải\s+pháp|chatbot|ai)\s+)?"
+        r"[^?]{0,80}"
+        r"(?:lead|khách\s+tiềm\s+năng|đội\s+kinh\s+doanh|"
+        r"đội\s+sale|sale|sales|bán\s+hàng)"
+        r"[^?]{0,120}",
+
+        # Hệ thống hỗ trợ đội kinh doanh / lead
+        r"\b(?:hệ\s+thống|công\s+cụ|giải\s+pháp|chatbot|ai)\s+"
+        r"hỗ\s+trợ\s+"
+        r"[^?]{0,80}"
+        r"(?:lead|khách\s+tiềm\s+năng|đội\s+kinh\s+doanh|"
+        r"đội\s+sale|sale|sales|bán\s+hàng)"
+        r"[^?]{0,120}",
+
+        # Xử lý / quản lý / phân loại lead
+        r"\b(?:xử\s+lý|quản\s+lý|phân\s+loại|"
+        r"theo\s+dõi|chăm\s+sóc)\s+"
+        r"(?:lead|khách\s+tiềm\s+năng)"
+        r"[^?]{0,120}",
+
+        # Tăng / tối ưu / cải thiện sale, lead, tỷ lệ chốt
+        r"\b(?:tăng|tối\s+ưu|cải\s+thiện)\s+"
+        r"[^?]{0,80}"
+        r"(?:tỷ\s+lệ\s+chốt|tỉ\s+lệ\s+chốt|"
+        r"lead|sale|sales|bán\s+hàng)"
+        r"[^?]{0,120}",
+
+        # Không còn ưu tiên...
         r"\b(?:mình|tôi|em|tui)\s+"
         r"không\s+còn\s+ưu\s+tiên\s+[^?]{1,180}",
     ]
